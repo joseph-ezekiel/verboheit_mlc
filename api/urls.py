@@ -1,4 +1,5 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
     auth_views,
@@ -10,18 +11,13 @@ from .views import (
     leaderboard,
     dashboard,
 )
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
 
 urlpatterns = [
-    # === AUTH ===
+    # === ROOT & AUTH ===
     path('', auth_views.api_root, name='api_root'),
     path('auth/login/', auth_views.login_api, name='api_login'),
     path('auth/register/candidate/', auth_views.register_candidate_api, name='api_register_candidate'),
     path('auth/register/staff/', auth_views.register_staff_api, name='api_register_staff'),
-    
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
@@ -31,6 +27,7 @@ urlpatterns = [
     path('candidates/<int:candidate_id>/', candidate.candidate_detail_api, name='api_candidate_detail'),
     path('candidates/<int:candidate_id>/assign-role/', candidate.assign_candidate_role_api, name='api_assign_candidate_role'),
     path('candidates/<int:candidate_id>/scores/', score.candidate_scores_api, name='api_candidate_scores'),
+    path('candidates/<int:candidate_id>/exam-history/', exam.exam_history_api, name='api_candidate_exam_history'),
 
     # === STAFF ===
     path('staff/', staff.staff_list_api, name='api_staff_list'),
@@ -40,9 +37,8 @@ urlpatterns = [
     # === EXAMS ===
     path('exams/', exam.exam_list_api, name='api_exam_list'),
     path('exams/<int:exam_id>/', exam.exam_detail_api, name='api_exam_detail'),
-    path('candidates/<int:candidate_id>/exam-history/', exam.exam_history_api, name="api_candidate_exam_history"),
-    path('exams/<int:exam_id>/questions/', exam.exam_questions_api, name="api_exam_questions"),
-    path('exams/<int:exam_id>/submit-score/', score.submit_score_api, name="api_submit_score"),
+    path('exams/<int:exam_id>/questions/', exam.exam_questions_api, name='api_exam_questions'),
+    path('exams/<int:exam_id>/submit-score/', score.submit_score_api, name='api_submit_score'),
 
     # === QUESTIONS ===
     path('questions/', question.question_list_api, name='api_question_list'),

@@ -5,16 +5,25 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.reverse import reverse
 
-
 from ..serializers import (
     CandidateRegistrationSerializer,
     StaffRegistrationSerializer,
     UserSerializer
 )
 
+
 # === API ROOT ===
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def api_root(request, format=None):
+    # Helper for reverse with <placeholder> pattern
+    def placeholder_url(name, placeholder="<id>", param="id"):
+        try:
+            temp_url = reverse(name, kwargs={param: 1}, request=request, format=format)
+            return temp_url.replace("1", placeholder)
+        except:
+            return f"/unresolved/{name}/"
+
     return Response({
         "auth": {
             "login": reverse('api_login', request=request, format=format),
@@ -25,32 +34,34 @@ def api_root(request, format=None):
         },
         "candidates": {
             "list": reverse('api_candidate_list', request=request, format=format),
-            "detail": "/api/candidates/<candidate_id>/",
-            "assign_role": "/api/candidates/<candidate_id>/assign-role/",
-            "scores": "/api/candidates/<candidate_id>/scores/",
+            "detail": placeholder_url('api_candidate_detail', "<candidate_id>", "candidate_id"),
+            "assign_role": placeholder_url('api_assign_candidate_role', "<candidate_id>", "candidate_id"),
+            "scores": placeholder_url('api_candidate_scores', "<candidate_id>", "candidate_id"),
             "me": reverse('api_candidate_me', request=request, format=format),
-            "exam_history": "/api/candidates/<candidate_id>/exam-history/",
+            "exam_history": placeholder_url('api_candidate_exam_history', "<candidate_id>", "candidate_id"),
         },
         "staff": {
             "list": reverse('api_staff_list', request=request, format=format),
-            "detail": "/api/staff/<staff_id>/",
+            "detail": placeholder_url('api_staff_detail', "<staff_id>", "staff_id"),
             "me": reverse('api_staff_me', request=request, format=format),
         },
         "exams": {
             "list": reverse('api_exam_list', request=request, format=format),
-            "detail": "/api/exams/<exam_id>/",
-            "questions": "/api/exams/<exam_id>/questions/",
-            "submit_score": "/api/exams/<exam_id>/submit-score/",
+            "detail": placeholder_url('api_exam_detail', "<exam_id>", "exam_id"),
+            "questions": placeholder_url('api_exam_questions', "<exam_id>", "exam_id"),
+        },
+        "scores": {
+            "submit": placeholder_url('api_submit_score', "<exam_id>", "exam_id"),
         },
         "questions": {
             "list": reverse('api_question_list', request=request, format=format),
-            "detail": "/api/questions/<question_id>/",
+            "detail": placeholder_url('api_question_detail', "<question_id>", "question_id"),
         },
         "dashboard": {
             "candidate": reverse('api_candidate_dashboard', request=request, format=format),
             "staff": reverse('api_staff_dashboard', request=request, format=format),
         },
-        "leaderboard": reverse('api_leaderboard', request=request, format=format)
+        "leaderboard": reverse('api_leaderboard', request=request, format=format),
     })
 
 # ========== REGISTER ==========
