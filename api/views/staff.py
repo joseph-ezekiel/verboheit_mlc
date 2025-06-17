@@ -5,10 +5,20 @@ from django.shortcuts import get_object_or_404
 
 from ..models import Staff
 from ..permissions import StaffWithRole
-from ..serializers import StaffDetailSerializer
-from ..utils.user import handle_update_delete, validate_role
+from ..serializers import StaffDetailSerializer, StaffListSerializer
+from ..utils.user import handle_update_delete
 from ..utils.query_filters import filter_staffs
 from ..utils.pagination_helpers import paginate_queryset
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def staff_me_api(request):
+    try:
+        staff = request.user.staff
+        serializer = StaffListSerializer(staff)
+        return Response(serializer.data)
+    except:
+        return Response({"error": "Not a candidate"}, status=403)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, StaffWithRole(['moderator', 'admin', 'owner'])])

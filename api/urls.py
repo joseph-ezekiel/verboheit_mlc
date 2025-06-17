@@ -27,17 +27,22 @@ urlpatterns = [
 
     # === CANDIDATES ===
     path('candidates/', candidate.candidate_list_api, name='api_candidate_list'),
+    path('candidates/me/', candidate.candidate_me_api, name='api_candidate_me'),
     path('candidates/<int:candidate_id>/', candidate.candidate_detail_api, name='api_candidate_detail'),
     path('candidates/<int:candidate_id>/assign-role/', candidate.assign_candidate_role_api, name='api_assign_candidate_role'),
     path('candidates/<int:candidate_id>/scores/', score.candidate_scores_api, name='api_candidate_scores'),
 
     # === STAFF ===
     path('staff/', staff.staff_list_api, name='api_staff_list'),
+    path('staff/me/', staff.staff_me_api, name='api_staff_me'),
     path('staff/<int:staff_id>/', staff.staff_detail_api, name='api_staff_detail'),
 
     # === EXAMS ===
     path('exams/', exam.exam_list_api, name='api_exam_list'),
     path('exams/<int:exam_id>/', exam.exam_detail_api, name='api_exam_detail'),
+    path('candidates/<int:candidate_id>/exam-history/', exam.exam_history_api, name="api_candidate_exam_history"),
+    path('exams/<int:exam_id>/questions/', exam.exam_questions_api, name="api_exam_questions"),
+    path('exams/<int:exam_id>/submit-score/', score.submit_score_api, name="api_submit_score"),
 
     # === QUESTIONS ===
     path('questions/', question.question_list_api, name='api_question_list'),

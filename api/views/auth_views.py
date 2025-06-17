@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.reverse import reverse
+
 
 from ..serializers import (
     CandidateRegistrationSerializer,
@@ -10,26 +12,48 @@ from ..serializers import (
     UserSerializer
 )
 
-# ========== LANDING ROUTE ==========
-
+# === API ROOT ===
 @api_view(['GET'])
-@permission_classes([AllowAny])
-def api_root(request):
+def api_root(request, format=None):
     return Response({
-        "auth_login": "/api/auth/login/",
-        "register_candidate": "/api/auth/register/candidate/",
-        "register_staff": "/api/auth/register/staff/",
-        "candidates": "/api/candidates/",
-        "staff": "/api/staff/",
-        "exams": "/api/exams/",
-        "questions": "/api/questions/",
-        "leaderboard": "/api/leaderboard/",
-        "dashboard_candidate": "/api/dashboard/candidate/",
-        "dashboard_staff": "/api/dashboard/staff/",
+        "auth": {
+            "login": reverse('api_login', request=request, format=format),
+            "register_candidate": reverse('api_register_candidate', request=request, format=format),
+            "register_staff": reverse('api_register_staff', request=request, format=format),
+            "token_obtain_pair": reverse('token_obtain_pair', request=request, format=format),
+            "token_refresh": reverse('token_refresh', request=request, format=format),
+        },
+        "candidates": {
+            "list": reverse('api_candidate_list', request=request, format=format),
+            "detail": "/api/candidates/<candidate_id>/",
+            "assign_role": "/api/candidates/<candidate_id>/assign-role/",
+            "scores": "/api/candidates/<candidate_id>/scores/",
+            "me": reverse('api_candidate_me', request=request, format=format),
+            "exam_history": "/api/candidates/<candidate_id>/exam-history/",
+        },
+        "staff": {
+            "list": reverse('api_staff_list', request=request, format=format),
+            "detail": "/api/staff/<staff_id>/",
+            "me": reverse('api_staff_me', request=request, format=format),
+        },
+        "exams": {
+            "list": reverse('api_exam_list', request=request, format=format),
+            "detail": "/api/exams/<exam_id>/",
+            "questions": "/api/exams/<exam_id>/questions/",
+            "submit_score": "/api/exams/<exam_id>/submit-score/",
+        },
+        "questions": {
+            "list": reverse('api_question_list', request=request, format=format),
+            "detail": "/api/questions/<question_id>/",
+        },
+        "dashboard": {
+            "candidate": reverse('api_candidate_dashboard', request=request, format=format),
+            "staff": reverse('api_staff_dashboard', request=request, format=format),
+        },
+        "leaderboard": reverse('api_leaderboard', request=request, format=format)
     })
 
 # ========== REGISTER ==========
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_candidate_api(request):

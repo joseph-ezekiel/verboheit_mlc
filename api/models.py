@@ -56,10 +56,11 @@ class CandidateScore(models.Model):
     score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
-    
+    submitted_by = models.ForeignKey('Staff', on_delete=models.CASCADE, null=True)
+
     class Meta:
         unique_together = ('candidate', 'exam')
-    
+
     def __str__(self):
         return f"{self.candidate.user.get_full_name()} - {self.exam.title} - {self.score}"
     

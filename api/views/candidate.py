@@ -11,6 +11,16 @@ from ..utils.user import handle_update_delete, validate_role
 from ..utils.query_filters import filter_candidates
 from ..utils.pagination_helpers import paginate_queryset
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def candidate_me_api(request):
+    try:
+        candidate = request.user.candidate
+        serializer = CandidateListSerializer(candidate)
+        return Response(serializer.data)
+    except:
+        return Response({"error": "Not a candidate"}, status=403)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, StaffWithRole(['moderator', 'admin', 'owner'])])
