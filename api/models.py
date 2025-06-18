@@ -1,7 +1,22 @@
 from django.db import models
+from django.db.models import Sum, Avg, Count
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+class CandidateManager(models.Manager):
+    def with_scores(self):
+        return self.annotate(
+            total_score=Sum('scores__score'),
+            average_score=Avg('scores__score'),
+            exams_taken=Count('scores', distinct=True)
+        )
+    def with_complete_data(self):
+        return (self.with_scores()
+                .prefetch_related(
+                    'scores__exam',
+                    'user')
+                .select_related('user'))
 
 class Candidate(models.Model):
     ROLE_CHOICES = (
@@ -31,6 +46,17 @@ class Candidate(models.Model):
             models.Index(fields=['role', 'is_active']),
             models.Index(fields=['school']),
         ]
+    objects = CandidateManager()
+    
+    @property
+    def score_data(self):
+        """Returns formatted score data if annotations exist"""
+        if hasattr(self, 'total_score'):
+            return {
+                'total_score': float(self.total_score or 0),
+                'average_score': float(self.average_score or 0)
+            }
+        return None
     
     @property
     def is_winner(self):
@@ -50,20 +76,20 @@ class Candidate(models.Model):
     def get_latest_score(self):
         return self.candidatescore_set.latest('date_created')
     
-class CandidateScore(models.Model):
-    candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE)
-    exam = models.ForeignKey('Exam', on_delete=models.CASCADE)
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField(auto_now=True)
-    submitted_by = models.ForeignKey('Staff', on_delete=models.CASCADE, null=True)
+    def get_score_dict(self):
+        return {
+            'total_score': float(getattr(self, 'total_score', 0)),
+            'average_score': float(getattr(self, 'average_score', 0)),
+            'scores': [
+                {
+                    'exam_id': s.exam.id,
+                    # ... other fields ...
+                }
+                for s in self.scores.all()
+            ]
+        }
 
-    class Meta:
-        unique_together = ('candidate', 'exam')
 
-    def __str__(self):
-        return f"{self.candidate.user.get_full_name()} - {self.exam.title} - {self.score}"
-    
 class Staff(models.Model):
     ROLE_CHOICES = (
         ('owner', 'Owner'),
@@ -97,14 +123,14 @@ class Question(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        Staff, 
+        'Staff', 
         blank=True,
         null=True,
         related_name='questions_created',
         on_delete=models.SET_NULL
     )
     updated_by = models.ForeignKey(
-        Staff, blank=True, null=True,
+        'Staff', blank=True, null=True,
         related_name='questions_updated',
         on_delete=models.SET_NULL
     )
@@ -134,20 +160,20 @@ class Exam(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        Staff, 
+        'Staff', 
         blank=True,
         null=True,
         related_name='exams_created',
         on_delete=models.SET_NULL
     )
     updated_by = models.ForeignKey(
-        Staff, 
+        'Staff', 
         blank=True,
         null=True,
         related_name='exams_updated',
         on_delete=models.SET_NULL
     )
-    questions = models.ManyToManyField(Question, blank=True)
+    questions = models.ManyToManyField('Question', blank=True)
     is_published = models.BooleanField(default=False, db_index=True)
     
     def __str__(self):
@@ -163,3 +189,15 @@ class Exam(models.Model):
     def get_average_score(self):
         from django.db.models import Avg
         return self.candidatescore_set.aggregate(avg_score=Avg('score'))['avg_score']
+
+class CandidateScore(models.Model):
+    candidate = models.ForeignKey('Candidate', on_delete=models.CASCADE, related_name='scores')
+    exam = models.ForeignKey('Exam', on_delete=models.CASCADE)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    date_taken = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+    submitted_by = models.ForeignKey('Staff', on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('candidate', 'exam')
+        ordering = ['-date_taken']

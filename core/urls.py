@@ -15,10 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+"""
+URL configuration for core project.
+"""
+
 from django.contrib import admin
 from django.urls import path, include, re_path
+from django.conf import settings
+from django.views.generic import RedirectView
 from rest_framework import permissions
-
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -29,19 +34,56 @@ schema_view = get_schema_view(
         default_version='v1',
         description="API documentation for the VML Competition Web Platform",
         terms_of_service="https://yourdomain.com/terms/",
-        contact=openapi.Contact(email="support@verboheit.com"),
-        license=openapi.License(name="BSD License"),
+        contact=openapi.Contact(
+            name="VML Support",
+            email="support@verboheit.com",
+            url="https://support.verboheit.com"
+        ),
+        license=openapi.License(
+            name="Proprietary License",
+            url="https://yourdomain.com/license/"
+        ),
+        x_logo={
+            "url": "https://yourdomain.com/static/logo.png",
+            "backgroundColor": "#FFFFFF",
+            "altText": "VML Logo"
+        }
     ),
     public=True,
     permission_classes=[permissions.AllowAny],
+    url=settings.BASE_URL if hasattr(settings, 'BASE_URL') else None,
+    authentication_classes=[],
 )
 
 urlpatterns = [
+    # Admin
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),  # Include your app's API URLs
-
-    # Swagger and ReDoc
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    
+    # API endpoints
+    path('api/', include([
+        path('v1/', include('api.urls', namespace='v1')),
+        path('', RedirectView.as_view(url='/api/v1/', permanent=False)),
+    ])),
+    
+    # Swagger and ReDoc - versioned documentation
+    re_path(r'^swagger/v1(?P<format>\.json|\.yaml)$', 
+            schema_view.without_ui(cache_timeout=0), 
+            name='schema-json-v1'),
+    path('swagger/v1/', 
+         schema_view.with_ui('swagger', cache_timeout=0), 
+         name='schema-swagger-ui-v1'),
+    path('redoc/v1/', 
+         schema_view.with_ui('redoc', cache_timeout=0), 
+         name='schema-redoc-v1'),
+    
+    # Redirects to current version docs
+    path('swagger/', RedirectView.as_view(url='/swagger/v1/', permanent=False)),
+    path('redoc/', RedirectView.as_view(url='/redoc/v1/', permanent=False)),
 ]
+
+# Debug toolbar for development
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns

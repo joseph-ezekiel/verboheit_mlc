@@ -27,6 +27,6 @@ class QuestionAdmin(admin.ModelAdmin):
 
 @admin.register(CandidateScore)
 class CandidateScoreAdmin(admin.ModelAdmin):
-    list_display = ('id', 'candidate', 'exam', 'score', 'date_created')
+    list_display = ('id', 'candidate', 'exam', 'score', 'date_taken')
     list_filter = ('exam',)
     search_fields = ('candidate__user__username', 'exam__title')

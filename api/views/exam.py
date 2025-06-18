@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView, ListCreateAPIView
 
 from ..models import Exam, Question, CandidateScore, Candidate
 from ..serializers import ExamListSerializer, ExamDetailSerializer, QuestionSerializer
@@ -11,59 +12,49 @@ from ..utils.pagination_helpers import paginate_queryset
 from ..utils.query_filters import filter_exams
 
 # === Exam Details ===
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated, StaffWithRole(['admin', 'owner'])])
-def exam_list_api(request):
-    if request.method == 'GET':
-        exams = Exam.objects.all()
-        exams = filter_exams(exams, request.query_params)
-        return paginate_queryset(exams, request, ExamListSerializer)
+class ExamListView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated, StaffWithRole(['admin', 'owner'])]
+    serializer_class = ExamListSerializer
+    filterset_class = filter_exams  # Assuming filter_exams is a FilterSet
+    
+    def get_serializer_class(self):
+        return ExamDetailSerializer if self.request.method == 'POST' else ExamListSerializer
+    
+    def get_queryset(self):
+        return Exam.objects.all()
 
-    serializer = ExamDetailSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated, StaffWithRole(['admin', 'owner'])])
-def exam_detail_api(request, exam_id):
-    exam = get_object_or_404(Exam, id=exam_id)
-
-    if request.method == 'GET':
-        return Response(ExamDetailSerializer(exam).data)
-
-    if request.method in ['PUT', 'PATCH']:
-        serializer = ExamDetailSerializer(
-            exam, data=request.data, partial=(request.method == 'PATCH')
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    exam.delete()
-    return Response({'message': 'Exam deleted successfully.'})
+class ExamDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, StaffWithRole(['admin', 'owner'])]
+    serializer_class = ExamDetailSerializer
+    queryset = Exam.objects.all()
+    lookup_url_kwarg = 'exam_id'
+    
+    def perform_destroy(self, instance):
+        instance.delete()
+        return Response({'message': 'Exam deleted successfully.'})
 
 # === Exam Questions ===
-@api_view(['GET'])
-@permission_classes([IsAuthenticated, StaffWithRole(['admin', 'owner'])])
-def exam_questions_api(request, exam_id):
-    exam = get_object_or_404(Exam, pk=exam_id)
-    questions = Question.objects.filter(exam=exam)
-    serializer = QuestionSerializer(questions, many=True)
-    return Response(serializer.data)
+class ExamQuestionsView(ListAPIView):
+    permission_classes = [IsAuthenticated, StaffWithRole(['admin', 'owner'])]
+    serializer_class = QuestionSerializer
+    
+    def get_queryset(self):
+        exam = get_object_or_404(Exam, pk=self.kwargs['exam_id'])
+        return exam.questions.all()
 
 # === Exam History ===
-@api_view(['GET'])
-@permission_classes([IsAuthenticated, StaffWithRole(['admin', 'owner'])])
-def exam_history_api(request, candidate_id):
-    candidate = get_object_or_404(Candidate, pk=candidate_id)
-    scores = CandidateScore.objects.filter(candidate=candidate).select_related('exam')
-    data = [
-        {
+class ExamHistoryView(ListAPIView):
+    permission_classes = [IsAuthenticated, StaffWithRole(['admin', 'owner'])]
+    
+    def get(self, request, *args, **kwargs):
+        candidate = get_object_or_404(Candidate, pk=self.kwargs['candidate_id'])
+        scores = CandidateScore.objects.filter(
+            candidate=candidate
+        ).select_related('exam')
+        
+        data = [{
             "exam": s.exam.title,
             "score": float(s.score),
-        } for s in scores
-    ]
-    return Response(data)
+        } for s in scores]
+        
+        return Response(data)

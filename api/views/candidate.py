@@ -1,15 +1,20 @@
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from django.db.models import Sum
+from rest_framework import status
+from rest_framework.settings import api_settings
+from django.db.models import Prefetch
 
 from ..models import Candidate, CandidateScore
 from ..permissions import StaffWithRole
 from ..serializers import CandidateDetailSerializer, CandidateListSerializer
-from ..utils.user import handle_update_delete, validate_role
+from ..utils.user import validate_role
 from ..utils.query_filters import filter_candidates
-from ..utils.pagination_helpers import paginate_queryset
+from ..utils.helpers import get_candidate_with_scores
+import logging
+
+logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -18,66 +23,53 @@ def candidate_me_api(request):
         candidate = request.user.candidate
         serializer = CandidateListSerializer(candidate)
         return Response(serializer.data)
-    except:
-        return Response({"error": "Not a candidate"}, status=403)
+    except AttributeError:
+        return Response({"error": "Not a candidate"}, status=status.HTTP_403_FORBIDDEN)
 
+class CandidateListView(ListAPIView):
+    permission_classes = [IsAuthenticated, StaffWithRole(['moderator', 'admin', 'owner'])]
+    serializer_class = CandidateListSerializer
+    pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated, StaffWithRole(['moderator', 'admin', 'owner'])])
-def candidate_list_api(request):
-    candidates = Candidate.objects.all()
-    candidates = filter_candidates(candidates, request.query_params)
-    return paginate_queryset(candidates, request, CandidateListSerializer)
+    def get_queryset(self):
+        return filter_candidates(
+            Candidate.objects.all(),
+            self.request.query_params
+            )
 
+class CandidateDetailView(RetrieveUpdateDestroyAPIView):
+    """
+    Handles retrieval, updates, and deletion of candidate profiles.
+    - Only owners or admins can modify
+    """
+    permission_classes = [IsAuthenticated, StaffWithRole(['owner', 'admin'])]
+    serializer_class = CandidateDetailSerializer
+    queryset = Candidate.objects.all()
+    lookup_url_kwarg = 'candidate_id'
+    
+    def get_queryset(self):
+        return Candidate.objects.with_scores().prefetch_related(
+            Prefetch('scores', queryset=CandidateScore.objects.select_related('exam', 'submitted_by'))
+        )
+    
+    def retrieve(self, request, *args, **kwargs):
+        candidate = self.get_object()
+        return Response(get_candidate_with_scores(candidate))
 
-@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated, StaffWithRole(['admin', 'owner'])])
-def candidate_detail_api(request, candidate_id):
-    candidate = get_object_or_404(Candidate, id=candidate_id)
+class AssignCandidateRoleView(UpdateAPIView):
+    permission_classes = [IsAuthenticated, StaffWithRole(['owner', 'admin'])]
+    serializer_class = CandidateDetailSerializer
+    queryset = Candidate.objects.all()
+    lookup_url_kwarg = 'candidate_id'
+    http_method_names = ['put']  # Restrict to PUT only
 
-    # Restrict non-admin users from modifying other users
-    if request.method in ['PUT', 'PATCH', 'DELETE']:
-        if request.user != candidate.user and not hasattr(request.user, 'staff'):
-            return Response({'error': 'Permission denied.'}, status=403)
-
-    if request.method == 'GET':
-        # Get candidate's exam scores
-        scores = CandidateScore.objects.filter(candidate=candidate).select_related('exam')
-        score_data = [
-            {
-                'exam_id': score.exam.id,
-                'exam_title': score.exam.title,
-                'score': float(score.score),
-                'date_taken': getattr(score, 'date_taken', None),
-            }
-            for score in scores
-        ]
-
-        total_score = sum([float(s['score']) for s in score_data])
-        average_score = total_score / len(score_data) if score_data else 0.0
-
-        candidate_data = CandidateDetailSerializer(candidate).data
-        candidate_data.update({
-            'scores': score_data,
-            'total_score': total_score,
-            'average_score': average_score,
-        })
-
-        return Response(candidate_data)
-
-    return handle_update_delete(request, candidate, CandidateDetailSerializer)
-
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated, StaffWithRole(['owner', 'admin'])])
-def assign_candidate_role_api(request, candidate_id):
-    candidate = get_object_or_404(Candidate, id=candidate_id)
-    new_role = request.data.get('role')
-
-    error_response = validate_role(new_role, Candidate)
-    if error_response:
-        return error_response
-
-    candidate.role = new_role
-    candidate.save()
-    return Response(CandidateDetailSerializer(candidate).data)
+    def update(self, request, *args, **kwargs):
+        candidate = self.get_object()
+        new_role = request.data.get('role')
+        
+        if error := validate_role(new_role, Candidate):
+            return error
+            
+        candidate.role = new_role
+        candidate.save()
+        return Response(self.get_serializer(candidate).data)

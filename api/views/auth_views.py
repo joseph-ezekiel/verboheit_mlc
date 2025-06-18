@@ -4,6 +4,8 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.reverse import reverse
+from django.urls.exceptions import NoReverseMatch
+from django.views.decorators.cache import cache_page
 
 from ..serializers import (
     CandidateRegistrationSerializer,
@@ -11,57 +13,90 @@ from ..serializers import (
     UserSerializer
 )
 
-
 # === API ROOT ===
+@cache_page(60 * 15)  # 15 minutes cache
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def api_root(request, format=None):
-    # Helper for reverse with <placeholder> pattern
-    def placeholder_url(name, placeholder="<id>", param="id"):
+def api_root(request, version='v1', format=None):
+    """API entry point with discoverable endpoints"""
+    
+    # Helper to generate URL with placeholder
+    def dynamic_url(name, placeholder, param):
         try:
-            temp_url = reverse(name, kwargs={param: 1}, request=request, format=format)
-            return temp_url.replace("1", placeholder)
-        except:
-            return f"/unresolved/{name}/"
-
-    return Response({
-        "auth": {
-            "login": reverse('api_login', request=request, format=format),
-            "register_candidate": reverse('api_register_candidate', request=request, format=format),
-            "register_staff": reverse('api_register_staff', request=request, format=format),
-            "token_obtain_pair": reverse('token_obtain_pair', request=request, format=format),
-            "token_refresh": reverse('token_refresh', request=request, format=format),
+            url = reverse(name, kwargs={param: 0}, request=request, format=format, version=version)
+            return url.replace("0", placeholder)
+        except NoReverseMatch:
+            return None
+    
+    # Helper to safely generate URLs
+    def safe_url(name, **kwargs):
+        try:
+            return reverse(name, request=request, format=format, version=version, **kwargs)
+        except NoReverseMatch:
+            return None
+    
+    # Organized resource structure
+    resources = {
+        "authentication": {
+            "login": safe_url('api-login'),
+            "register": {
+                "candidate": safe_url('api-register-candidate'),
+                "staff": safe_url('api-register-staff'),
+            },
+            "token": {
+                "obtain": safe_url('token-obtain-pair'),
+                "refresh": safe_url('token-refresh'),
+            }
         },
         "candidates": {
-            "list": reverse('api_candidate_list', request=request, format=format),
-            "detail": placeholder_url('api_candidate_detail', "<candidate_id>", "candidate_id"),
-            "assign_role": placeholder_url('api_assign_candidate_role', "<candidate_id>", "candidate_id"),
-            "scores": placeholder_url('api_candidate_scores', "<candidate_id>", "candidate_id"),
-            "me": reverse('api_candidate_me', request=request, format=format),
-            "exam_history": placeholder_url('api_candidate_exam_history', "<candidate_id>", "candidate_id"),
+            "collection": safe_url('api-candidate-list'),
+            "me": safe_url('api-candidate-me'),
+            "detail": dynamic_url('api-candidate-detail', "<candidate_id>", "candidate_id"),
+            "actions": {
+                "assign_role": dynamic_url('api-candidate-role-assign', "<candidate_id>", "candidate_id"),
+                "scores": dynamic_url('api-candidate-scores', "<candidate_id>", "candidate_id"),
+                "exam_history": dynamic_url('api-candidate-exam-history', "<candidate_id>", "candidate_id"),
+            }
         },
         "staff": {
-            "list": reverse('api_staff_list', request=request, format=format),
-            "detail": placeholder_url('api_staff_detail', "<staff_id>", "staff_id"),
-            "me": reverse('api_staff_me', request=request, format=format),
+            "collection": safe_url('api-staff-list'),
+            "me": safe_url('api-staff-me'),
+            "detail": dynamic_url('api-staff-detail', "<staff_id>", "staff_id"),
+            "actions": {
+                "assign_role": dynamic_url('api-staff-role-assign', "<staff_id>", "staff_id"),
+            }
         },
         "exams": {
-            "list": reverse('api_exam_list', request=request, format=format),
-            "detail": placeholder_url('api_exam_detail', "<exam_id>", "exam_id"),
-            "questions": placeholder_url('api_exam_questions', "<exam_id>", "exam_id"),
-        },
-        "scores": {
-            "submit": placeholder_url('api_submit_score', "<exam_id>", "exam_id"),
+            "collection": safe_url('api-exam-list'),
+            "detail": dynamic_url('api-exam-detail', "<exam_id>", "exam_id"),
+            "questions": dynamic_url('api-exam-questions', "<exam_id>", "exam_id"),
+            "scores": {
+                "submit": dynamic_url('api-exam-score-submit', "<exam_id>", "exam_id"),
+            }
         },
         "questions": {
-            "list": reverse('api_question_list', request=request, format=format),
-            "detail": placeholder_url('api_question_detail', "<question_id>", "question_id"),
+            "collection": safe_url('api-question-list'),
+            "detail": dynamic_url('api-question-detail', "<question_id>", "question_id"),
         },
         "dashboard": {
-            "candidate": reverse('api_candidate_dashboard', request=request, format=format),
-            "staff": reverse('api_staff_dashboard', request=request, format=format),
+            "candidate": safe_url('api-candidate-dashboard'),
+            "staff": safe_url('api-staff-dashboard'),
         },
-        "leaderboard": reverse('api_leaderboard', request=request, format=format),
+        "leaderboard": safe_url('api-leaderboard'),
+    }
+    
+    # Remove any None values (unresolved URLs)
+    def clean_none(obj):
+        if isinstance(obj, dict):
+            return {k: clean_none(v) for k, v in obj.items() if v is not None}
+        return obj
+    
+    return Response({
+        "VML_competition_api": {
+            "version": version,  # Dynamic version from request
+            "documentation": "https://api.example.com/docs/",
+            "resources": clean_none(resources)
+        }
     })
 
 # ========== REGISTER ==========
@@ -70,7 +105,7 @@ def api_root(request, format=None):
 def register_candidate_api(request):
     serializer = CandidateRegistrationSerializer(data=request.data)
     if serializer.is_valid():
-        candidate = serializer.save()
+        serializer.save()
         return Response({'message': 'Registration successful'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -79,7 +114,7 @@ def register_candidate_api(request):
 def register_staff_api(request):
     serializer = StaffRegistrationSerializer(data=request.data)
     if serializer.is_valid():
-        staff = serializer.save()
+        serializer.save()
         return Response({'message': 'Registration successful'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

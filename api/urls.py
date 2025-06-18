@@ -12,42 +12,45 @@ from .views import (
     dashboard,
 )
 
+app_name = 'api'
+
 urlpatterns = [
     # === ROOT & AUTH ===
-    path('', auth_views.api_root, name='api_root'),
-    path('auth/login/', auth_views.login_api, name='api_login'),
-    path('auth/register/candidate/', auth_views.register_candidate_api, name='api_register_candidate'),
-    path('auth/register/staff/', auth_views.register_staff_api, name='api_register_staff'),
-    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('', auth_views.api_root, name='api-root'),
+    path('auth/login/', auth_views.login_api, name='api-login'),
+    path('auth/register/candidate/', auth_views.register_candidate_api, name='api-register-candidate'),
+    path('auth/register/staff/', auth_views.register_staff_api, name='api-register-staff'),
+    path('auth/token/', TokenObtainPairView.as_view(), name='token-obtain-pair'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 
     # === CANDIDATES ===
-    path('candidates/', candidate.candidate_list_api, name='api_candidate_list'),
-    path('candidates/me/', candidate.candidate_me_api, name='api_candidate_me'),
-    path('candidates/<int:candidate_id>/', candidate.candidate_detail_api, name='api_candidate_detail'),
-    path('candidates/<int:candidate_id>/assign-role/', candidate.assign_candidate_role_api, name='api_assign_candidate_role'),
-    path('candidates/<int:candidate_id>/scores/', score.candidate_scores_api, name='api_candidate_scores'),
-    path('candidates/<int:candidate_id>/exam-history/', exam.exam_history_api, name='api_candidate_exam_history'),
+    path('candidates/', candidate.CandidateListView.as_view(), name='api-candidate-list'),
+    path('candidates/me/', candidate.candidate_me_api, name='api-candidate-me'),
+    path('candidates/<int:candidate_id>/', candidate.CandidateDetailView.as_view(), name='api-candidate-detail'),
+    path('candidates/<int:candidate_id>/roles/assign/', candidate.AssignCandidateRoleView.as_view(), name='api-candidate-role-assign'),
+    path('candidates/<int:candidate_id>/scores/', score.candidate_scores_api, name='api-candidate-scores'),
+    path('candidates/<int:candidate_id>/exam-history/', exam.ExamHistoryView.as_view(), name='api-candidate-exam-history'),
 
     # === STAFF ===
-    path('staff/', staff.staff_list_api, name='api_staff_list'),
-    path('staff/me/', staff.staff_me_api, name='api_staff_me'),
-    path('staff/<int:staff_id>/', staff.staff_detail_api, name='api_staff_detail'),
+    path('staff/', staff.StaffListView.as_view(), name='api-staff-list'),
+    path('staff/me/', staff.staff_me_api, name='api-staff-me'),
+    path('staff/<int:staff_id>/', staff.StaffDetailView.as_view(), name='api-staff-detail'),
+    path('staff/<int:staff_id>/roles/assign/', staff.AssignStaffRoleView.as_view(), name='api-staff-role-assign'),
 
     # === EXAMS ===
-    path('exams/', exam.exam_list_api, name='api_exam_list'),
-    path('exams/<int:exam_id>/', exam.exam_detail_api, name='api_exam_detail'),
-    path('exams/<int:exam_id>/questions/', exam.exam_questions_api, name='api_exam_questions'),
-    path('exams/<int:exam_id>/submit-score/', score.submit_score_api, name='api_submit_score'),
+    path('exams/', exam.ExamListView.as_view(), name='api-exam-list'),
+    path('exams/<int:exam_id>/', exam.ExamDetailView.as_view(), name='api-exam-detail'),
+    path('exams/<int:exam_id>/questions/', exam.ExamQuestionsView.as_view(), name='api-exam-questions'),
+    path('exams/<int:exam_id>/scores/', score.submit_score_api, name='api-exam-score-submit'),  # Changed
 
     # === QUESTIONS ===
-    path('questions/', question.question_list_api, name='api_question_list'),
-    path('questions/<int:question_id>/', question.question_detail_api, name='api_question_detail'),
+    path('questions/', question.question_list_api, name='api-question-list'),
+    path('questions/<int:question_id>/', question.question_detail_api, name='api-question-detail'),
 
     # === DASHBOARDS ===
-    path('dashboard/candidate/', dashboard.candidate_dashboard_api, name='api_candidate_dashboard'),
-    path('dashboard/staff/', dashboard.staff_dashboard_api, name='api_staff_dashboard'),
+    path('dashboard/candidate/', dashboard.candidate_dashboard_api, name='api-candidate-dashboard'),
+    path('dashboard/staff/', dashboard.staff_dashboard_api, name='api-staff-dashboard'),
 
     # === LEADERBOARD ===
-    path('leaderboard/', leaderboard.leaderboard_api, name='api_leaderboard'),
+    path('leaderboard/', leaderboard.leaderboard_api, name='api-leaderboard'),
 ]
