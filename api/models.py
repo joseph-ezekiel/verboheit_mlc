@@ -89,7 +89,6 @@ class Candidate(models.Model):
             ]
         }
 
-
 class Staff(models.Model):
     ROLE_CHOICES = (
         ('owner', 'Owner'),

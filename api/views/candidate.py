@@ -40,7 +40,7 @@ class CandidateListView(ListAPIView):
 class CandidateDetailView(RetrieveUpdateDestroyAPIView):
     """
     Handles retrieval, updates, and deletion of candidate profiles.
-    - Only owners or admins can modify
+    - Only owners or admins can view and modify
     """
     permission_classes = [IsAuthenticated, StaffWithRole(['owner', 'admin'])]
     serializer_class = CandidateDetailSerializer
@@ -61,7 +61,7 @@ class AssignCandidateRoleView(UpdateAPIView):
     serializer_class = CandidateDetailSerializer
     queryset = Candidate.objects.all()
     lookup_url_kwarg = 'candidate_id'
-    http_method_names = ['put']  # Restrict to PUT only
+    http_method_names = ['put']
 
     def update(self, request, *args, **kwargs):
         candidate = self.get_object()

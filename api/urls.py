@@ -18,8 +18,9 @@ urlpatterns = [
     # === ROOT & AUTH ===
     path('', auth_views.api_root, name='api-root'),
     path('auth/login/', auth_views.login_api, name='api-login'),
-    path('auth/register/candidate/', auth_views.register_candidate_api, name='api-register-candidate'),
-    path('auth/register/staff/', auth_views.register_staff_api, name='api-register-staff'),
+    path('auth/logout/', auth_views.logout_api, name='api-logout'),
+    path('auth/register/candidate/', auth_views.CandidateRegistrationView.as_view(), name='api-register-candidate'),
+    path('auth/register/staff/', auth_views.StaffRegistrationView.as_view(), name='api-register-staff'),
     path('auth/token/', TokenObtainPairView.as_view(), name='token-obtain-pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 
@@ -50,6 +51,10 @@ urlpatterns = [
     # === DASHBOARDS ===
     path('dashboard/candidate/', dashboard.candidate_dashboard_api, name='api-candidate-dashboard'),
     path('dashboard/staff/', dashboard.staff_dashboard_api, name='api-staff-dashboard'),
+
+    # === ACCOUNTS ===
+    path('account-management/', dashboard.AccountManagementView.as_view(), name='api-account-management'),
+    path('account-management/<int:user_id>/', dashboard.AccountManagementView.as_view(), name='api-account-management-detail'),
 
     # === LEADERBOARD ===
     path('leaderboard/', leaderboard.leaderboard_api, name='api-leaderboard'),

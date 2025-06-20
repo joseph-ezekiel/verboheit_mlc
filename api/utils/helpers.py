@@ -5,7 +5,7 @@ def get_candidate_with_scores(candidate):
     """Enhanced version using annotations if available"""
 
     if hasattr(candidate, 'total_score'):
-        total = float(getattr(candidate, 'total_score', 0))
+        total = float(getattr(candidate, 'total_score', 0) or 0)
         count = candidate.scores.count()
         avg = total / count if count else 0.0
     else:

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Candidate, Staff, Question, Exam, CandidateScore
+from django.db.models import Sum
 
 User = get_user_model()
 
@@ -18,7 +19,7 @@ class CandidateListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Candidate
-        fields = ['id', 'user', 'school', 'role', 'is_verified', 'date_created']
+        fields = ['id', 'user', 'phone', 'school', 'role', 'is_verified', 'date_created']
 
 class CandidateDetailSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -62,7 +63,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
 
     def get_total_score(self, obj):
         from .models import CandidateScore
-        return CandidateScore.objects.filter(candidate=obj).aggregate(total=serializers.Sum('score'))['total'] or 0
+        return CandidateScore.objects.filter(candidate=obj).aggregate(total=Sum('score'))['total'] or 0
 
     def get_average_score(self, obj):
         from .models import CandidateScore
