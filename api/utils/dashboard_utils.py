@@ -31,13 +31,16 @@ def get_candidate_dashboard_data(candidate):
     scores = CandidateScore.objects.filter(candidate=candidate)
 
     total_exams_taken = scores.count()
-    latest_score = scores.latest("date_created") if total_exams_taken > 0 else None
+    latest_score = scores.latest("date_recorded") if total_exams_taken > 0 else None
     average_score = scores.aggregate(avg=Avg("score"))["avg"] or 0
     highest_score = scores.aggregate(max=Max("score"))["max"] or 0
     lowest_score = scores.aggregate(min=Min("score"))["min"] or 0
 
-    available_exams = Exam.published_exams().filter(stage=candidate.role)
-    recent_scores = scores.order_by("-date_created")[:5]
+    available_exams = [
+        exam for exam in Exam.objects.filter(stage=candidate.role, is_active=True)
+        if exam.is_currently_open
+    ]
+    recent_scores = scores.order_by("-date_recorded")[:5]
 
     # Ranking logic for league candidates
     candidate_rank = None
@@ -57,7 +60,7 @@ def get_candidate_dashboard_data(candidate):
 
     return {
         "candidate_info": {
-            "id": candidate.id,
+            "id": candidate.user.id,
             "name": candidate.user.get_full_name(),
             "email": candidate.user.email,
             "school": candidate.school,
@@ -70,7 +73,7 @@ def get_candidate_dashboard_data(candidate):
         },
         "exam_stats": {
             "total_exams_taken": total_exams_taken,
-            "available_exams_count": available_exams.count(),
+            "available_exams_count": len(available_exams),
             "average_score": round(float(average_score), 2),
             "highest_score": float(highest_score),
             "lowest_score": float(lowest_score),
@@ -78,7 +81,7 @@ def get_candidate_dashboard_data(candidate):
                 {
                     "score": float(latest_score.score),
                     "exam_title": latest_score.exam.title,
-                    "date": latest_score.date_created,
+                    "date": latest_score.date_recorded,
                 }
                 if latest_score
                 else None
@@ -97,7 +100,7 @@ def get_candidate_dashboard_data(candidate):
             {
                 "exam_title": score.exam.title,
                 "score": float(score.score),
-                "date": score.date_created,
+                "date": score.date_recorded,
                 "exam_stage": score.exam.stage,
             }
             for score in recent_scores
@@ -162,21 +165,21 @@ def get_staff_dashboard_data(staff):
     }
 
     total_scores = CandidateScore.objects.count()
-    recent_scores = CandidateScore.objects.filter(date_created__gte=last_week).count()
+    recent_scores = CandidateScore.objects.filter(date_recorded__gte=last_week).count()
 
     avg_score = CandidateScore.objects.aggregate(avg=Avg("score"))["avg"] or 0
     highest_score = CandidateScore.objects.aggregate(max=Max("score"))["max"] or 0
 
     recent_activity = CandidateScore.objects.select_related(
         "candidate__user", "exam"
-    ).order_by("-date_created")[:10]
+    ).order_by("-date_recorded")[:10]
 
     upcoming_exams = Exam.objects.filter(
         exam_date__gte=now, is_published=True
     ).order_by("exam_date")[:5]
 
     staff_info = {
-        "id": staff.id,
+        "id": staff.user.id,
         "name": staff.user.get_full_name(),
         "email": staff.user.email,
         "role": staff.get_role_display(),
@@ -225,7 +228,7 @@ def get_staff_dashboard_data(staff):
                 "candidate_name": activity.candidate.user.get_full_name(),
                 "exam_title": activity.exam.title,
                 "score": float(activity.score),
-                "date": activity.date_created,
+                "date": activity.date_recorded,
                 "candidate_school": activity.candidate.school,
             }
             for activity in recent_activity

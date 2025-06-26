@@ -7,10 +7,12 @@ You can do:
     from api.views import candidate_me_api
 """
 
-from .dashboard import *
+from .answers import *
+from .auth_views import *
 from .candidate import *
-from .staff import *
+from .dashboard import *
 from .exam import *
+from .leaderboard import *
 from .question import *
 from .score import *
-from .leaderboard import *
+from .staff import *

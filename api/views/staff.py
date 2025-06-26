@@ -69,7 +69,7 @@ class StaffListView(ListAPIView):
         Returns:
             Filtered queryset of staff members.
         """
-        return filter_staffs(Staff.objects.all(), self.request.query_params)
+        return filter_staffs(Staff.objects.all().order_by('-date_created'), self.request.query_params)
 
 
 class StaffDetailView(RetrieveUpdateDestroyAPIView):

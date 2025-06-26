@@ -59,7 +59,7 @@ class CandidateListView(ListAPIView):
         """
         Returns a filtered queryset of candidates based on request query parameters.
         """
-        return filter_candidates(Candidate.objects.all(), self.request.query_params)
+        return filter_candidates(Candidate.objects.all().order_by('-date_created'), self.request.query_params)
 
 
 class CandidateDetailView(RetrieveUpdateDestroyAPIView):

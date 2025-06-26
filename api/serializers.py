@@ -7,10 +7,16 @@ Includes:
 - CandidateScore and registration serializers
 """
 
-from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from .models import Candidate, Staff, Question, Exam, CandidateScore
 from django.db.models import Sum
+from django.contrib.auth import get_user_model
+
+from rest_framework import serializers
+
+from .models import (
+    Candidate, Staff,
+    Question, Exam,
+    CandidateScore, CandidateAnswer,
+)
 
 User = get_user_model()
 
@@ -32,6 +38,18 @@ class UserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "date_joined")
 
+class MinimalCandidateSerializer(serializers.ModelSerializer):
+    """
+    Minimal serializer for listing candidate info.
+    """
+
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Candidate
+        fields = ["user", "school"]
+    
+
 
 class CandidateListSerializer(serializers.ModelSerializer):
     """
@@ -43,7 +61,6 @@ class CandidateListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Candidate
         fields = (
-            "id",
             "user",
             "phone",
             "school",
@@ -70,7 +87,6 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Candidate
         fields = (
-            "id",
             "user",
             "phone",
             "school",
@@ -85,7 +101,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
             "total_score",
             "average_score",
         )
-        read_only_fields = ("id", "date_created", "date_updated", "user")
+        read_only_fields = ("date_created", "date_updated", "user")
 
     def get_latest_score(self, obj):
         """
@@ -109,7 +125,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
 
         scores = CandidateScore.objects.filter(candidate=obj)
         return [
-            {"exam": score.exam.title, "score": score.score, "date": score.date_created}
+            {"exam": score.exam.title, "score": score.score, "date": score.date_taken}
             for score in scores
         ]
 
@@ -140,6 +156,22 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
             or 0
         )
 
+class MinimalStaffSerializer(serializers.ModelSerializer):
+    """
+    Minimal serializer for listing staff info.
+    """
+
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Staff
+        fields = ["user"]
+
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }
 
 class StaffListSerializer(serializers.ModelSerializer):
     """
@@ -150,7 +182,7 @@ class StaffListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Staff
-        fields = ["id", "user", "role", "occupation", "is_verified", "date_created"]
+        fields = ["user", "role", "occupation", "is_verified", "date_created"]
 
 
 class StaffDetailSerializer(serializers.ModelSerializer):
@@ -163,7 +195,6 @@ class StaffDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
         fields = (
-            "id",
             "user",
             "phone",
             "occupation",
@@ -174,7 +205,7 @@ class StaffDetailSerializer(serializers.ModelSerializer):
             "date_created",
             "date_updated",
         )
-        read_only_fields = ("id", "date_created", "date_updated", "user")
+        read_only_fields = ("date_created", "date_updated", "user")
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -182,7 +213,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     Serializer for exam questions with created_by staff included.
     """
 
-    created_by = StaffListSerializer(read_only=True)
+    created_by = MinimalStaffSerializer(read_only=True)
 
     class Meta:
         model = Question
@@ -203,7 +234,7 @@ class ExamListSerializer(serializers.ModelSerializer):
     """
 
     question_count = serializers.SerializerMethodField()
-    created_by = StaffListSerializer(read_only=True)
+    created_by = MinimalStaffSerializer(read_only=True)
 
     class Meta:
         model = Exam
@@ -227,15 +258,19 @@ class ExamListSerializer(serializers.ModelSerializer):
         return obj.get_question_count()
 
 
+
+
 class ExamDetailSerializer(serializers.ModelSerializer):
     """
     Detailed serializer for a single exam, including:
     - question list
     - average score
     """
-
-    questions = QuestionSerializer(many=True, read_only=True)
-    created_by = StaffListSerializer(read_only=True)
+    questions = serializers.PrimaryKeyRelatedField(
+        queryset=Question.objects.all(),
+        many=True
+    )
+    created_by = MinimalStaffSerializer(read_only=True)
     average_score = serializers.SerializerMethodField()
 
     class Meta:
@@ -272,7 +307,7 @@ class CandidateScoreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CandidateScore
-        fields = ("id", "candidate", "exam", "score", "date_created")
+        fields = ("id", "candidate", "exam", "score", "date_recorded")
         read_only_fields = ("id", "date_created")
 
 
@@ -330,3 +365,18 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
 
         staff = Staff.objects.create(user=user, **validated_data)
         return staff
+
+class CandidateAnswerSerializer(serializers.ModelSerializer):
+    selected_option = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = CandidateAnswer
+        fields = ['question', 'selected_option']
+
+class CandidateAnswerBulkSerializer(serializers.Serializer):
+    answers = CandidateAnswerSerializer(many=True)
+
+    def validate_answers(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one answer must be provided.")
+        return value

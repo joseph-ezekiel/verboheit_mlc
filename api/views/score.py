@@ -2,12 +2,16 @@
 API views for retrieving and submitting candidate scores.
 """
 
+from django.shortcuts import get_object_or_404
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 
-from ..models import Candidate, CandidateScore, Exam
+from ..models import (
+    Candidate, CandidateScore,
+    Exam
+)
 from ..serializers import CandidateScoreSerializer
 from ..permissions import StaffWithRole
 
@@ -36,7 +40,7 @@ def candidate_scores_api(request, candidate_id):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated, StaffWithRole(["admin", "owner"])])
-def submit_score_api(request, exam_id):
+def submit_exam_score_api(request, exam_id):
     """
     Submit or update a candidate's score for a specific exam.
 
@@ -93,3 +97,4 @@ def submit_score_api(request, exam_id):
         return Response({"error": "Only staff users can submit scores."}, status=403)
     except Exception as e:
         return Response({"error": str(e)}, status=400)
+

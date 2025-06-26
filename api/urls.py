@@ -16,17 +16,19 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
+    answers,
     auth_views,
+
     candidate,
-    staff,
+    dashboard,
     exam,
+    leaderboard,    
     question,
     score,
-    leaderboard,
-    dashboard,
+    staff,
 )
 
-APP_NAME = "api"
+app_name = "api"
 
 urlpatterns = [
     # === ROOT & AUTH ===
@@ -92,10 +94,13 @@ urlpatterns = [
         name="api-exam-questions",
     ),
     path(
-        "exams/<int:exam_id>/scores/",
-        score.submit_score_api,
-        name="api-exam-score-submit",
+        "exams/<int:exam_id>/submit-exam-score/",
+        score.submit_exam_score_api,
+        name="api-submit-exam-score",
     ),
+    path('exams/<int:exam_id>/submit-exam-answers/',
+         answers.submit_exam_answers,
+         name='api_submit_exam_answers'),
     # === QUESTIONS ===
     path("questions/", question.question_list_api, name="api-question-list"),
     path(

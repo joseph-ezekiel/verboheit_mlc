@@ -7,6 +7,11 @@ based on query parameters typically passed from a GET request.
 
 from django.db.models import Q
 
+import django_filters
+
+from ..models import Exam
+
+
 
 def filter_candidates(queryset, params):
     """
@@ -114,9 +119,9 @@ def filter_questions(queryset, params):
     return queryset
 
 
-def filter_exams(queryset, params):
+class ExamFilter(django_filters.FilterSet):
     """
-    Filter exam queryset based on optional query parameters.
+    FilterSet for filtering Exam objects.
 
     Supported filters:
         - search: Partial match on title or stage
@@ -125,19 +130,18 @@ def filter_exams(queryset, params):
     Args:
         queryset (QuerySet): The initial Exam queryset.
         params (QueryDict): The request query parameters.
-
-    Returns:
-        QuerySet: Filtered queryset.
     """
-    search = params.get("search")
-    date_created = params.get("date_created")
+    search = django_filters.CharFilter(method='filter_search', label="Search")
+    date_created = django_filters.DateFilter(field_name='date_created', lookup_expr='date')
 
-    if search:
-        queryset = queryset.filter(
-            Q(title__icontains=search) | Q(stage__icontains=search)
-        )
-
-    if date_created:
-        queryset = queryset.filter(date_created=date_created)
-
-    return queryset
+    class Meta:
+        model = Exam
+        fields = ('search', 'date_created')
+        
+    def filter_search(self, queryset, name, value):
+        """Custom filter method for search functionality"""
+        if value:
+            return queryset.filter(
+                Q(title__icontains=value) | Q(stage__icontains=value)
+            )
+        return queryset

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @cache_page(60 * 15)  # 15 minutes cache
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def api_root(request, response_format=None):
+def api_root(request, format=None):
     """API entry point with discoverable endpoints"""
 
     def generate_url_with_placeholder(name, placeholder, param):
@@ -41,7 +41,7 @@ def api_root(request, response_format=None):
                 name,
                 kwargs={param: dummy_id},
                 request=request,
-                response_format=response_format,
+                format=format,
             )
             return url.replace(str(dummy_id), placeholder)
         except NoReverseMatch:
@@ -51,7 +51,7 @@ def api_root(request, response_format=None):
         """Safely generate URLs, return None if route doesn't exist"""
         try:
             return reverse(
-                name, request=request, response_format=response_format, **kwargs
+                name, request=request, format=format, **kwargs
             )
         except NoReverseMatch:
             return None
@@ -110,10 +110,13 @@ def api_root(request, response_format=None):
                 "questions": generate_url_with_placeholder(
                     "v1:api-exam-questions", "<exam_id>", "exam_id"
                 ),
-                "scores": {
-                    "submit": generate_url_with_placeholder(
-                        "v1:api-exam-score-submit", "<exam_id>", "exam_id"
+                "submission": {
+                    "submit_scores": generate_url_with_placeholder(
+                        "v1:api-submit-exam-score", "<exam_id>", "exam_id"
                     ),
+                    "submit_exam_answers": generate_url_with_placeholder(
+                        "v1:api-submit_exam_answers", "<exam_id>", "exam_id"
+                    )
                 },
             },
             "questions": {
@@ -147,7 +150,7 @@ class BaseRegistrationView(CreateAPIView):
         if serializer.is_valid():
             user = serializer.save()
             return Response(
-                {"message": "Registration successful", "user_id": user.id},
+                {"message": "Registration successful"},
                 status=status.HTTP_201_CREATED,
             )
         return Response(

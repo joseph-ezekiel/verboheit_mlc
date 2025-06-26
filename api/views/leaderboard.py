@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum
 
 from ..models import Candidate
-from ..serializers import CandidateListSerializer
+from ..serializers import MinimalCandidateSerializer
 from ..permissions import IsLeagueCandidateOrStaff
 
 
@@ -27,13 +27,13 @@ def leaderboard_api(request):
     """
     league_candidates = (
         Candidate.candidates_by_role("league")
-        .annotate(total_score=Sum("candidatescore__score"))
+        .annotate(total_score=Sum("scores__score"))
         .order_by("-total_score")
     )
 
     leaderboard = [
         {
-            "candidate": CandidateListSerializer(candidate).data,
+            "candidate": MinimalCandidateSerializer(candidate).data,
             "total_score": candidate.total_score or 0,
         }
         for candidate in league_candidates

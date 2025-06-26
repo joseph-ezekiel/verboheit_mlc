@@ -11,10 +11,15 @@ from rest_framework.generics import (
     ListCreateAPIView,
 )
 
-from ..models import Exam, CandidateScore, Candidate
-from ..serializers import ExamListSerializer, ExamDetailSerializer, QuestionSerializer
+from ..models import Exam, CandidateScore, Candidate, Question
+from ..serializers import (
+    ExamListSerializer,
+    ExamDetailSerializer,
+    QuestionSerializer,
+    MinimalStaffSerializer
+)
 from ..permissions import StaffWithRole
-from ..utils.query_filters import filter_exams
+from ..utils.query_filters import ExamFilter
 
 
 class ExamListView(ListCreateAPIView):
@@ -27,7 +32,7 @@ class ExamListView(ListCreateAPIView):
 
     permission_classes = [IsAuthenticated, StaffWithRole(["admin", "owner"])]
     serializer_class = ExamListSerializer
-    filterset_class = filter_exams
+    filterset_class = ExamFilter
 
     def get_serializer_class(self):
         """
@@ -43,7 +48,13 @@ class ExamListView(ListCreateAPIView):
 
     def get_queryset(self):
         """Returns a queryset of all Exam objects."""
-        return Exam.objects.all()
+        return Exam.objects.all().order_by('-date_created')
+    
+    def perform_create(self, serializer):
+        """
+        Saves the staff member who created the exam
+        """
+        serializer.save(created_by=self.request.user.staff)
 
 
 class ExamDetailView(RetrieveUpdateDestroyAPIView):
@@ -57,7 +68,7 @@ class ExamDetailView(RetrieveUpdateDestroyAPIView):
 
     permission_classes = [IsAuthenticated, StaffWithRole(["admin", "owner"])]
     serializer_class = ExamDetailSerializer
-    queryset = Exam.objects.all()
+    queryset = Exam.objects.all().order_by('-date_created')
     lookup_url_kwarg = "exam_id"
 
     def perform_destroy(self, instance):
@@ -83,7 +94,7 @@ class ExamQuestionsView(ListAPIView):
         Returns the queryset of questions related to a given exam.
         """
         exam = get_object_or_404(Exam, pk=self.kwargs["exam_id"])
-        return exam.questions.all()
+        return exam.questions.all().order_by('-date_created')
 
 
 class ExamHistoryView(ListAPIView):

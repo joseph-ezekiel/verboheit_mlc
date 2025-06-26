@@ -10,7 +10,12 @@ Includes custom display, filtering, and search options for:
 """
 
 from django.contrib import admin
-from .models import Candidate, Staff, Exam, Question, CandidateScore
+from .models import (
+    Candidate, Staff,
+    Exam, Question,
+    CandidateScore,
+    CandidateAnswer,
+)
 
 
 @admin.register(Candidate)
@@ -21,7 +26,6 @@ class CandidateAdmin(admin.ModelAdmin):
     """
 
     list_display = (
-        "id",
         "user",
         "school",
         "role",
@@ -41,7 +45,6 @@ class StaffAdmin(admin.ModelAdmin):
     """
 
     list_display = (
-        "id",
         "user",
         "role",
         "occupation",
@@ -66,10 +69,10 @@ class ExamAdmin(admin.ModelAdmin):
         "stage",
         "exam_date",
         "duration_minutes",
-        "is_published",
+        "is_active",
         "date_created",
     )
-    list_filter = ("stage", "is_published")
+    list_filter = ("stage", "is_active")
     search_fields = ("title", "stage")
 
 
@@ -80,9 +83,9 @@ class QuestionAdmin(admin.ModelAdmin):
     Displays question text, difficulty, and creator.
     """
 
-    list_display = ("id", "description", "difficulty", "created_by", "date_created")
+    list_display = ("id", "text", "difficulty", "created_by", "date_created")
     list_filter = ("difficulty",)
-    search_fields = ("description",)
+    search_fields = ("text",)
 
 
 @admin.register(CandidateScore)
@@ -92,6 +95,31 @@ class CandidateScoreAdmin(admin.ModelAdmin):
     Displays score details per candidate and exam.
     """
 
-    list_display = ("id", "candidate", "exam", "score", "date_taken")
+    list_display = ("id", "candidate", "exam", "score", "date_recorded")
     list_filter = ("exam",)
     search_fields = ("candidate__user__username", "exam__title")
+@admin.register(CandidateAnswer)
+class CandidateAnswerAdmin(admin.ModelAdmin):
+    """
+    Admin interface for the CandidateAnswer model.
+    Displays answers provided by each candidate in specific exams.
+    """
+    list_display = (
+        "id",
+        "get_candidate",
+        "get_exam",
+        "question",
+        "selected_option",
+        "answered_at",
+    )
+    list_filter = ("candidate_score__exam", "answered_at")
+    search_fields = ("candidate_score__candidate__user__username", "question__text")
+    autocomplete_fields = ("question", "candidate_score")
+
+    def get_candidate(self, obj):
+        return obj.candidate_score.candidate
+    get_candidate.short_description = "Candidate"
+
+    def get_exam(self, obj):
+        return obj.candidate_score.exam
+    get_exam.short_description = "Exam"

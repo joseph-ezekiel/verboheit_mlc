@@ -47,7 +47,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     # === Admin Panel ===
-    path("admin/", admin.site.urls),
+    path("api/v1/admin/", admin.site.urls),
     # === API ===
     path(
         "api/",

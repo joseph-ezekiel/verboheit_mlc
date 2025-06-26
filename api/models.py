@@ -56,7 +56,7 @@ class Candidate(models.Model):
         ("winner", "Winner"),
     )
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, blank=True)
     school = models.CharField(max_length=150)
     profile_photo = models.ImageField(
@@ -119,7 +119,7 @@ class Candidate(models.Model):
         """
         Returns the most recent score submitted for this candidate.
         """
-        return self.candidatescore_set.latest("date_created")
+        return self.candidatescore_set.latest("date_recorded")
 
     def get_score_dict(self):
         """
@@ -151,7 +151,7 @@ class Staff(models.Model):
         ("volunteer", "Volunteer"),
     )
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, blank=True)
     occupation = models.CharField(max_length=50, blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -177,9 +177,19 @@ class Question(models.Model):
     """
     A question belonging to one or more exams. Includes text, difficulty, and staff author.
     """
+    QUESTION_OPTIONS = [
+        ("A", "Option A"),
+        ("B", "Option B"),
+        ("C", "Option C"),
+        ("D", "Option D"),
+    ]
 
-    description = models.TextField()
-    answer = models.TextField(blank=True, null=True)
+    text = models.TextField()
+    option_a = models.CharField(max_length=255, blank=True)
+    option_b = models.CharField(max_length=255, blank=True)
+    option_c = models.CharField(max_length=255, blank=True)
+    option_d = models.CharField(max_length=255, blank=True)
+    correct_answer = models.CharField(max_length=1, choices=QUESTION_OPTIONS)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -221,10 +231,13 @@ class Exam(models.Model):
     )
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=False, db_index=True)
     exam_date = models.DateTimeField(blank=True, null=True, db_index=True)
+    open_duration_hours = models.PositiveIntegerField(default=12)
     duration_minutes = models.PositiveIntegerField(default=60)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    questions = models.ManyToManyField("Question", blank=True)
     created_by = models.ForeignKey(
         "Staff",
         blank=True,
@@ -239,19 +252,34 @@ class Exam(models.Model):
         related_name="exams_updated",
         on_delete=models.SET_NULL,
     )
-    questions = models.ManyToManyField("Question", blank=True)
-    is_published = models.BooleanField(default=False, db_index=True)
 
     def __str__(self):
         return f"{self.title} ({self.id})"
 
     @classmethod
-    def published_exams(cls):
+    def active_exams(cls):
         """
-        Returns only exams marked as published.
+        Returns only exams marked as active.
         """
-        return cls.objects.filter(is_published=True)
-
+        return cls.objects.filter(is_active=True)
+    
+    @property
+    def is_currently_open(self):
+        """
+        Exam is open only if it's active, and either:
+        - exam_date is None (always open)
+        - or current time is within open window
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+        if not self.is_active:
+            return False
+        if self.exam_date is None:
+            return True
+        now = timezone.now
+        end_time = self.exam_date + timedelta(hours=self.open_duration_hours)
+        return self.exam_date <= now <= end_time
+        
     def get_question_count(self):
         """
         Returns the number of questions in the exam.
@@ -276,8 +304,8 @@ class CandidateScore(models.Model):
         "Candidate", on_delete=models.CASCADE, related_name="scores"
     )
     exam = models.ForeignKey("Exam", on_delete=models.CASCADE)
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-    date_taken = models.DateTimeField(auto_now_add=True)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=1)
+    date_recorded = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     submitted_by = models.ForeignKey(
         "Staff", on_delete=models.SET_NULL, null=True, blank=True
@@ -285,4 +313,17 @@ class CandidateScore(models.Model):
 
     class Meta:
         unique_together = ("candidate", "exam")
-        ordering = ["-date_taken"]
+        ordering = ["-date_recorded"]
+
+class CandidateAnswer(models.Model):
+    candidate_score = models.ForeignKey("CandidateScore", related_name="answers", on_delete=models.CASCADE)
+    question = models.ForeignKey("Question", on_delete=models.CASCADE)
+    selected_option = models.CharField(
+        max_length=1,
+        choices=Question.QUESTION_OPTIONS,
+        blank=True, default="",
+    )
+    answered_at = models.DateField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('candidate_score', 'question')

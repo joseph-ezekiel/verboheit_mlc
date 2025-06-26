@@ -1,8 +1,10 @@
 """
 Utility function to serialize candidate details along with score summaries.
 """
+from django.utils import timezone
 
-from ..models import CandidateScore
+
+from ..models import CandidateScore, CandidateAnswer
 from ..serializers import CandidateDetailSerializer
 
 
@@ -39,9 +41,12 @@ def get_candidate_with_scores(candidate):
                     "exam_id": s.exam.id,
                     "exam_title": s.exam.title,
                     "score": float(s.score),
-                    "date_recorded": s.date_taken,
+                    "date_recorded": s.date_recorded,
                     "last_updated": s.date_updated,
-                    "submitted_by": s.submitted_by.id if s.submitted_by else None,
+                    "submitted_by": {
+                        "id": s.submitted_by.user.id,
+                        "name": s.submitted_by.user.get_full_name()
+                    } if s.submitted_by else None
                 }
                 for s in candidate.scores.all().select_related("exam", "submitted_by")
             ],
@@ -50,3 +55,20 @@ def get_candidate_with_scores(candidate):
         }
     )
     return data
+
+def auto_score(candidate_score):
+    """
+    Scores a candidate's exam based on their submitted answers.
+    """
+    answers = CandidateAnswer.objects.filter(candidate_score=candidate_score)
+    correct_count = sum(
+        1 for answer in answers if answer.selected_option == answer.question.correct_answer
+    )
+
+    total_questions = candidate_score.exam.questions.count()
+    score = (correct_count / total_questions) * 100 if total_questions else 0
+
+    candidate_score.score = round(score, 2)
+    candidate_score.date_recorded = timezone.now()
+    candidate_score.submitted_by = "auto"
+    candidate_score.save()
