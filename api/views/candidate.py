@@ -1,6 +1,7 @@
 """
 API views specific to candidates.
 """
+import logging
 
 from django.db.models import Prefetch
 from rest_framework.decorators import api_view, permission_classes
@@ -20,6 +21,8 @@ from ..serializers import CandidateDetailSerializer, CandidateListSerializer
 from ..utils.user import validate_role
 from ..utils.query_filters import filter_candidates
 from ..utils.helpers import get_candidate_with_scores
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(["GET"])
@@ -93,6 +96,25 @@ class CandidateDetailView(RetrieveUpdateDestroyAPIView):
         candidate = self.get_object()
         return Response(get_candidate_with_scores(candidate))
 
+    def perform_update(self, serializer) -> None:
+        """
+        Save updates to candidate and log the action.
+        """
+        logger.info(
+            f"Updating candidate {serializer.instance.pk}",
+            extra={"user": self.request.user.id},
+        )
+        serializer.save(updated_by=self.request.user.staff)
+
+    def perform_destroy(self, instance) -> None:
+        """
+        Soft-delete staff by setting `is_active` to False.
+        """
+        logger.info(
+            f"Soft-deleting candidate {instance.pk}", extra={"user": self.request.user.id}
+        )
+        instance.is_active = False
+        instance.save()
 
 class AssignCandidateRoleView(UpdateAPIView):
     """

@@ -38,13 +38,13 @@ def candidate_scores_api(request, candidate_id):
     return Response(serializer.data)
 
 
-@api_view(["POST"])
+@api_view(["PUT"])
 @permission_classes([IsAuthenticated, StaffWithRole(["admin", "owner"])])
 def submit_exam_score_api(request, exam_id):
     """
     Submit or update a candidate's score for a specific exam.
 
-    Expected POST data:
+    Expected PUT data:
         - candidate_id: ID of the candidate.
         - score: Score to submit or update.
 
@@ -73,12 +73,13 @@ def submit_exam_score_api(request, exam_id):
         staff = request.user.staff
 
         # Create or update the score
-        score_obj, created = CandidateScore.objects.update_or_create(
+        _, created = CandidateScore.objects.update_or_create(
             candidate=candidate,
             exam=exam,
             defaults={
                 "score": score,
                 "submitted_by": staff,
+                "auto_score": False
             },
         )
 
@@ -94,7 +95,7 @@ def submit_exam_score_api(request, exam_id):
         )
 
     except AttributeError:
-        return Response({"error": "Only staff users can submit scores."}, status=403)
+        return Response({"error": "Only admin and owner staff members can submit scores."}, status=403)
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 

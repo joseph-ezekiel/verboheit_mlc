@@ -48,12 +48,12 @@ def get_candidate_dashboard_data(candidate):
     if candidate.role == "league":
         league_candidates = (
             Candidate.candidates_by_role("league")
-            .annotate(total_score=Sum("candidatescore__score"))
+            .annotate(total_score=Sum("scores__score"))
             .order_by("-total_score")
         )
 
         for index, c in enumerate(league_candidates, 1):
-            if c.id == candidate.id:
+            if c.pk == candidate.pk:
                 candidate_rank = index
                 break
         total_league_candidates = league_candidates.count()
@@ -110,8 +110,9 @@ def get_candidate_dashboard_data(candidate):
                 "id": exam.id,
                 "title": exam.title,
                 "description": exam.description,
+                "open_duration_hours": exam.open_duration_hours,
                 "exam_date": exam.exam_date,
-                "duration_minutes": exam.duration_minutes,
+                "countdown_minutes": exam.countdown_minutes,
                 "question_count": exam.get_question_count(),
                 "stage": exam.stage,
             }
@@ -152,7 +153,6 @@ def get_staff_dashboard_data(staff):
     recent_candidates = Candidate.objects.filter(date_created__gte=last_week).count()
 
     total_exams = Exam.objects.count()
-    published_exams = Exam.published_exams().count()
     recent_exams = Exam.objects.filter(date_created__gte=last_week).count()
 
     total_questions = Question.objects.count()
@@ -175,7 +175,7 @@ def get_staff_dashboard_data(staff):
     ).order_by("-date_recorded")[:10]
 
     upcoming_exams = Exam.objects.filter(
-        exam_date__gte=now, is_published=True
+        exam_date__gte=now, is_active=True
     ).order_by("exam_date")[:5]
 
     staff_info = {
@@ -205,13 +205,7 @@ def get_staff_dashboard_data(staff):
         },
         "exams": {
             "total": total_exams,
-            "published": published_exams,
             "recent": recent_exams,
-            "publish_rate": (
-                round((published_exams / total_exams * 100), 1)
-                if total_exams > 0
-                else 0
-            ),
         },
         "questions": {
             "total": total_questions,
@@ -240,7 +234,7 @@ def get_staff_dashboard_data(staff):
                 "exam_date": exam.exam_date,
                 "stage": exam.get_stage_display(),
                 "question_count": exam.get_question_count(),
-                "duration_minutes": exam.duration_minutes,
+                "countdown_minutes": exam.countdown_minutes,
             }
             for exam in upcoming_exams
         ],

@@ -3,8 +3,11 @@ API views to set, list, and retrieve exam details.
 """
 
 from django.shortcuts import get_object_or_404
+
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 from rest_framework.generics import (
     ListAPIView,
     RetrieveUpdateDestroyAPIView,
@@ -16,9 +19,9 @@ from ..serializers import (
     ExamListSerializer,
     ExamDetailSerializer,
     QuestionSerializer,
-    MinimalStaffSerializer
+    CandidateExamSerializer
 )
-from ..permissions import StaffWithRole
+from ..permissions import StaffWithRole, IsCandidate, IsLeagueCandidate
 from ..utils.query_filters import ExamFilter
 
 
@@ -124,3 +127,18 @@ class ExamHistoryView(ListAPIView):
         ]
 
         return Response(data)
+
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsCandidate])
+def candidate_take_exam(request, exam_id):
+    candidate = request.user.candidate
+    exam = get_object_or_404(Exam, pk=exam_id)
+
+    if candidate.role != exam.stage:
+        return Response({"detail": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = CandidateExamSerializer(exam)
+    return Response(serializer.data)
+    

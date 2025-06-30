@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from ..utils.auth_helpers import get_candidate_from_request, get_staff_from_request
-from ..permissions import StaffWithRole
+from ..permissions import StaffWithRole, IsCandidate, IsStaff
 from ..serializers import (
     CandidateDetailSerializer,
     StaffDetailSerializer,
@@ -23,7 +23,7 @@ from ..utils.dashboard_utils import (
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsCandidate])
 def candidate_dashboard_api(request):
     """
     Retrieve dashboard data for the currently authenticated candidate.
@@ -87,7 +87,6 @@ class AccountManagementView(APIView):
 
         return Response(
             {
-                "user": UserSerializer(user).data,
                 "profile": self._get_user_profile_data(user),
             }
         )
@@ -200,8 +199,8 @@ class AccountManagementView(APIView):
                 return CandidateDetailSerializer(user.candidate).data
             if hasattr(user, "staff"):
                 return StaffDetailSerializer(user.staff).data
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error serializing profile: {e}")
         return None
 
     def _get_profile_serializer(self, user, data, partial=False):

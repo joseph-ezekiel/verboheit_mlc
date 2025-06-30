@@ -8,9 +8,11 @@ Includes:
 """
 
 from django.db.models import Sum
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, password_validation
+from django.core.exceptions import ValidationError
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from .models import (
     Candidate, Staff,
@@ -25,6 +27,12 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Basic serializer for the Django User model.
     """
+    username = serializers.CharField(max_length=14,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    email = serializers.EmailField(
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
 
     class Meta:
         model = User
@@ -37,6 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
         )
         read_only_fields = ("id", "date_joined")
+        
 
 class MinimalCandidateSerializer(serializers.ModelSerializer):
     """
@@ -102,7 +111,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
             "average_score",
         )
         read_only_fields = ("date_created", "date_updated", "user")
-
+        
     def get_latest_score(self, obj):
         """
         Returns latest score for candidate if available.
@@ -125,7 +134,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
 
         scores = CandidateScore.objects.filter(candidate=obj)
         return [
-            {"exam": score.exam.title, "score": score.score, "date": score.date_taken}
+            {"exam": score.exam.title, "score": score.score, "date": score.date_recorded}
             for score in scores
         ]
 
@@ -219,8 +228,12 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = (
             "id",
-            "description",
-            "answer",
+            "text",
+            "option_a",
+            "option_b",
+            "option_c",
+            "option_d",
+            "correct_answer",
             "difficulty",
             "date_created",
             "created_by",
@@ -244,7 +257,7 @@ class ExamListSerializer(serializers.ModelSerializer):
             "stage",
             "description",
             "exam_date",
-            "duration_minutes",
+            "countdown_minutes",
             "is_published",
             "question_count",
             "created_by",
@@ -281,10 +294,12 @@ class ExamDetailSerializer(serializers.ModelSerializer):
             "stage",
             "description",
             "exam_date",
-            "duration_minutes",
-            "is_published",
+            "countdown_minutes",
+            "open_duration_hours",
+            "is_active",
             "questions",
             "created_by",
+            "updated_by",
             "average_score",
             "date_created",
         )
@@ -323,6 +338,16 @@ class CandidateRegistrationSerializer(serializers.ModelSerializer):
         model = Candidate
         fields = ("user", "password", "phone", "school", "profile_photo")
 
+    def validate_password(self, password):
+        """
+        Custom password validation using Django's built-in validators.
+        """
+        try:
+            password_validation.validate_password(password)
+        except ValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return password
+    
     def create(self, validated_data):
         user_data = validated_data.pop("user")
         password = validated_data.pop("password")
@@ -351,6 +376,16 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
         model = Staff
         fields = ["user", "password", "phone", "occupation", "profile_photo"]
 
+    def validate_password(self, password):
+        """
+        Custom password validation using Django's built-in validators.
+        """
+        try:
+            password_validation.validate_password(password)
+        except ValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return password
+    
     def create(self, validated_data):
         user_data = validated_data.pop("user")
         password = validated_data.pop("password")
@@ -367,6 +402,10 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
         return staff
 
 class CandidateAnswerSerializer(serializers.ModelSerializer):
+    """
+    Represents a candidate's answer to a question.
+    - If a question is unanswered, set 'selected_option' to an empty string "".
+    """
     selected_option = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
@@ -380,3 +419,31 @@ class CandidateAnswerBulkSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("At least one answer must be provided.")
         return value
+    
+class CandidateQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = (
+            "id",
+            "text",
+            "option_a",
+            "option_b",
+            "option_c",
+            "option_d",
+        )
+
+class CandidateExamSerializer(serializers.ModelSerializer):
+    questions = CandidateQuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Exam
+        fields = (
+            "id",
+            "title",
+            "stage",
+            "description",
+            "open_duration_hours",
+            "exam_date",
+            "countdown_minutes",
+            "questions",
+        )

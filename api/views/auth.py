@@ -7,6 +7,7 @@ import logging
 from django.contrib.auth import authenticate
 from django.urls.exceptions import NoReverseMatch
 from django.views.decorators.cache import cache_page
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.generics import CreateAPIView
@@ -77,13 +78,13 @@ def api_root(request, format=None):
                     "v1:api-candidate-detail", "<candidate_id>", "candidate_id"
                 ),
                 "actions": {
-                    "assign_role": generate_url_with_placeholder(
+                    "assign-role": generate_url_with_placeholder(
                         "v1:api-candidate-role-assign", "<candidate_id>", "candidate_id"
                     ),
                     "scores": generate_url_with_placeholder(
                         "v1:api-candidate-scores", "<candidate_id>", "candidate_id"
                     ),
-                    "exam_history": generate_url_with_placeholder(
+                    "exam-history": generate_url_with_placeholder(
                         "v1:api-candidate-exam-history",
                         "<candidate_id>",
                         "candidate_id",
@@ -110,12 +111,15 @@ def api_root(request, format=None):
                 "questions": generate_url_with_placeholder(
                     "v1:api-exam-questions", "<exam_id>", "exam_id"
                 ),
+                "candidate-take-exam": generate_url_with_placeholder(
+                    "v1:api-take-exam", "<exam_id>", "exam_id"
+                ),
                 "submission": {
-                    "submit_scores": generate_url_with_placeholder(
+                    "submit-exam-score": generate_url_with_placeholder(
                         "v1:api-submit-exam-score", "<exam_id>", "exam_id"
                     ),
-                    "submit_exam_answers": generate_url_with_placeholder(
-                        "v1:api-submit_exam_answers", "<exam_id>", "exam_id"
+                    "submit-exam-answers": generate_url_with_placeholder(
+                        "v1:api-submit-exam-answers", "<exam_id>", "exam_id"
                     )
                 },
             },
@@ -129,13 +133,16 @@ def api_root(request, format=None):
                 "candidate": safe_reverse("v1:api-candidate-dashboard"),
                 "staff": safe_reverse("v1:api-staff-dashboard"),
             },
-            "user_accounts": {
+            "user-accounts": {
                 "account-management": safe_reverse("v1:api-account-management"),
                 "account-management-detail": generate_url_with_placeholder(
                     "v1:api-account-management-detail", "<user_id>", "user_id"
                 ),
             },
-            "leaderboard": safe_reverse("v1:api-leaderboard"),
+            "leaderboard": {
+                "publish-leaderboard": safe_reverse("v1:api-publish-leaderboard"),
+                "load-leaderboard": safe_reverse("v1:api-load-leaderboard")
+            }
         }
     )
 
@@ -146,9 +153,11 @@ class BaseRegistrationView(CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return Response({'error': 'Already authenticated'}, status=400)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response(
                 {"message": "Registration successful"},
                 status=status.HTTP_201_CREATED,
@@ -182,7 +191,7 @@ class LoginRateThrottle(AnonRateThrottle):
 @throttle_classes([LoginRateThrottle])
 def login_api(request):
     """Authenticate user and return tokens + user info"""
-    # Input validation
+
     username = request.data.get("username", "").strip()
     password = request.data.get("password", "")
 

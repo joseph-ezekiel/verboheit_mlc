@@ -8,7 +8,7 @@ You can do:
 """
 
 from .answers import *
-from .auth_views import *
+from .auth import *
 from .candidate import *
 from .dashboard import *
 from .exam import *

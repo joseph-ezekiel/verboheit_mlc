@@ -66,9 +66,11 @@ class ExamAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "title",
+        "description",
         "stage",
         "exam_date",
-        "duration_minutes",
+        "open_duration_hours",
+        "countdown_minutes",
         "is_active",
         "date_created",
     )
@@ -95,9 +97,9 @@ class CandidateScoreAdmin(admin.ModelAdmin):
     Displays score details per candidate and exam.
     """
 
-    list_display = ("id", "candidate", "exam", "score", "date_recorded")
+    list_display = ("id", "candidate", "exam", "score", "date_recorded", "auto_score")
     list_filter = ("exam",)
-    search_fields = ("candidate__user__username", "exam__title")
+    search_fields = ("candidate__user__username", "exam__title", "auto_score")
 @admin.register(CandidateAnswer)
 class CandidateAnswerAdmin(admin.ModelAdmin):
     """

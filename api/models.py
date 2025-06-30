@@ -11,6 +11,7 @@ Includes models for:
 from django.db import models
 from django.db.models import Sum, Avg, Count
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
 
 User = get_user_model()
 
@@ -213,7 +214,7 @@ class Question(models.Model):
     )
 
     def __str__(self):
-        return f"Q{self.id}: {self.description[:50]}..."
+        return f"Q{self.id}: {self.text[:50]}..."
 
 
 class Exam(models.Model):
@@ -229,12 +230,12 @@ class Exam(models.Model):
     stage = models.CharField(
         max_length=20, choices=STAGE_CHOICES, default="league", db_index=True
     )
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=False, db_index=True)
     exam_date = models.DateTimeField(blank=True, null=True, db_index=True)
     open_duration_hours = models.PositiveIntegerField(default=12)
-    duration_minutes = models.PositiveIntegerField(default=60)
+    countdown_minutes = models.PositiveIntegerField(default=60)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     questions = models.ManyToManyField("Question", blank=True)
@@ -276,7 +277,7 @@ class Exam(models.Model):
             return False
         if self.exam_date is None:
             return True
-        now = timezone.now
+        now = timezone.now()
         end_time = self.exam_date + timedelta(hours=self.open_duration_hours)
         return self.exam_date <= now <= end_time
         
@@ -310,6 +311,7 @@ class CandidateScore(models.Model):
     submitted_by = models.ForeignKey(
         "Staff", on_delete=models.SET_NULL, null=True, blank=True
     )
+    auto_score = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         unique_together = ("candidate", "exam")
@@ -327,3 +329,14 @@ class CandidateAnswer(models.Model):
     
     class Meta:
         unique_together = ('candidate_score', 'question')
+        
+class LeaderboardSnapshot(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    data = models.JSONField()
+    
+    published_by = models.ForeignKey(
+        "Staff", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    
+    class Meta:
+        ordering = ['-created_at']

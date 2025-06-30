@@ -2,29 +2,25 @@
 API view for retrieving the leaderboard of league candidates.
 """
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+
 from django.db.models import Sum
 
-from ..models import Candidate
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+from ..models import Candidate, LeaderboardSnapshot
 from ..serializers import MinimalCandidateSerializer
-from ..permissions import IsLeagueCandidateOrStaff
+from ..permissions import IsLeagueCandidateOrStaff, StaffWithRole
 
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated, IsLeagueCandidateOrStaff])
-def leaderboard_api(request):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, StaffWithRole(["admin", "owner"])])
+def publish_leaderboard(request):
     """
-    Retrieve the leaderboard of league candidates based on total scores.
-
-    - Accessible by league candidates and staff.
-    - Calculates the total score for each league candidate by summing their exam scores.
-    - Returns a list ordered by descending total score.
-
-    Returns:
-        200 OK with a list of candidates and their total scores.
+    Refreshes and publishes the leaderboard snapshot. Admin/Owner only.
     """
+    staff = request.user.staff
     league_candidates = (
         Candidate.candidates_by_role("league")
         .annotate(total_score=Sum("scores__score"))
@@ -39,4 +35,20 @@ def leaderboard_api(request):
         for candidate in league_candidates
     ]
 
-    return Response(leaderboard)
+    snapshot = LeaderboardSnapshot.objects.create(
+        data=leaderboard,
+        published_by=staff,
+    )
+
+    return Response({"message": "Leaderboard published!", "published_at": snapshot.created_at})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsLeagueCandidateOrStaff])
+def load_leaderboard_api(request):
+    """
+    Returns the most recently published leaderboard snapshot.
+    """
+    snapshot = LeaderboardSnapshot.objects.order_by('-created_at').first()
+    if not snapshot:
+        return Response({"detail": "Leaderboard not published yet."}, status=404)
+    return Response(snapshot.data)

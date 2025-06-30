@@ -48,17 +48,12 @@ def submit_exam_answers(request, exam_id):
     answers_data = serializer.validated_data['answers']
 
     for answer_data in answers_data:
-        question_id = answer_data['question']
+        question_obj = answer_data['question']
         selected_option = answer_data['selected_option']
-        
-        try:
-            question = Question.objects.get(pk=question_id)
-        except Question.DoesNotExist:
-            continue
         
         CandidateAnswer.objects.create(
             candidate_score=candidate_score,
-            question=question,
+            question=question_obj,
             selected_option=selected_option
         )
 

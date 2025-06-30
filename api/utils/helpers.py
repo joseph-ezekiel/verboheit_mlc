@@ -70,5 +70,5 @@ def auto_score(candidate_score):
 
     candidate_score.score = round(score, 2)
     candidate_score.date_recorded = timezone.now()
-    candidate_score.submitted_by = "auto"
+    candidate_score.auto_score = True
     candidate_score.save()

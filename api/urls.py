@@ -17,8 +17,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
     answers,
-    auth_views,
-
+    auth,
     candidate,
     dashboard,
     exam,
@@ -32,17 +31,17 @@ app_name = "api"
 
 urlpatterns = [
     # === ROOT & AUTH ===
-    path("", auth_views.api_root, name="api-root"),
-    path("auth/login/", auth_views.login_api, name="api-login"),
-    path("auth/logout/", auth_views.logout_api, name="api-logout"),
+    path("", auth.api_root, name="api-root"),
+    path("auth/login/", auth.login_api, name="api-login"),
+    path("auth/logout/", auth.logout_api, name="api-logout"),
     path(
         "auth/register/candidate/",
-        auth_views.CandidateRegistrationView.as_view(),
+        auth.CandidateRegistrationView.as_view(),
         name="api-register-candidate",
     ),
     path(
         "auth/register/staff/",
-        auth_views.StaffRegistrationView.as_view(),
+        auth.StaffRegistrationView.as_view(),
         name="api-register-staff",
     ),
     path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
@@ -94,13 +93,18 @@ urlpatterns = [
         name="api-exam-questions",
     ),
     path(
+        "exams/<int:exam_id>/take-exam/",
+        exam.candidate_take_exam,
+        name="api-take-exam",
+    ),
+    path(
         "exams/<int:exam_id>/submit-exam-score/",
         score.submit_exam_score_api,
         name="api-submit-exam-score",
     ),
-    path('exams/<int:exam_id>/submit-exam-answers/',
+    path("exams/<int:exam_id>/submit-exam-answers/",
          answers.submit_exam_answers,
-         name='api_submit_exam_answers'),
+         name="api-submit-exam-answers"),
     # === QUESTIONS ===
     path("questions/", question.question_list_api, name="api-question-list"),
     path(
@@ -127,5 +131,6 @@ urlpatterns = [
         name="api-account-management-detail",
     ),
     # === LEADERBOARD ===
-    path("leaderboard/", leaderboard.leaderboard_api, name="api-leaderboard"),
+    path("leaderboard/publish/", leaderboard.publish_leaderboard, name="api-publish-leaderboard"), 
+    path("load-leaderboard/", leaderboard.load_leaderboard_api, name="api-load-leaderboard"),
 ]
