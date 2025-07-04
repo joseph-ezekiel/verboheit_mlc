@@ -61,12 +61,18 @@ def auto_score(candidate_score):
     Scores a candidate's exam based on their submitted answers.
     """
     answers = CandidateAnswer.objects.filter(candidate_score=candidate_score)
+    total_questions = candidate_score.exam.questions.count()
+    print(f"Scoring CandidateScore: {candidate_score.pk}")
+    print(f"Total Answers Submitted: {answers.count()}")
+    print(f"Total Questions in Exam: {total_questions}")
+
     correct_count = sum(
         1 for answer in answers if answer.selected_option == answer.question.correct_answer
     )
+    print(f"Correct Answers: {correct_count}")
 
-    total_questions = candidate_score.exam.questions.count()
     score = (correct_count / total_questions) * 100 if total_questions else 0
+    print(f"Final Score: {score}")
 
     candidate_score.score = round(score, 2)
     candidate_score.date_recorded = timezone.now()

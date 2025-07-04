@@ -10,6 +10,7 @@ Includes:
 from django.db.models import Sum
 from django.contrib.auth import get_user_model, password_validation
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -258,7 +259,9 @@ class ExamListSerializer(serializers.ModelSerializer):
             "description",
             "exam_date",
             "countdown_minutes",
-            "is_published",
+            "open_duration_hours",
+            "is_active",
+            "is_currently_open",
             "question_count",
             "created_by",
             "date_created",
@@ -332,36 +335,43 @@ class CandidateRegistrationSerializer(serializers.ModelSerializer):
     """
 
     user = UserSerializer()
-    password = serializers.CharField(write_only=True)
+    password1 = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
 
     class Meta:
         model = Candidate
-        fields = ("user", "password", "phone", "school", "profile_photo")
+        fields = ("user", "password1", "password2", "phone", "school", "profile_photo")
 
-    def validate_password(self, password):
+    def validate(self, attrs):
+        if attrs.get("password1") != attrs.get("password2"):
+            raise serializers.ValidationError({"password2": "Passwords do not match."})
+        return attrs
+
+    def validate_password1(self, value):
         """
         Custom password validation using Django's built-in validators.
         """
         try:
-            password_validation.validate_password(password)
+            password_validation.validate_password(value)
         except ValidationError as e:
             raise serializers.ValidationError(list(e.messages))
-        return password
-    
+        return value
+
     def create(self, validated_data):
         user_data = validated_data.pop("user")
-        password = validated_data.pop("password")
+        password, _ = validated_data.pop("password1"), validated_data.pop("password2")
 
-        user = User.objects.create_user(
-            username=user_data["username"],
-            email=user_data["email"],
-            first_name=user_data.get("first_name", ""),
-            last_name=user_data.get("last_name", ""),
-            password=password,
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=user_data["username"],
+                email=user_data["email"],
+                first_name=user_data.get("first_name", ""),
+                last_name=user_data.get("last_name", ""),
+                password=password,
+            )
 
-        candidate = Candidate.objects.create(user=user, **validated_data)
-        return candidate
+            candidate = Candidate.objects.create(user=user, **validated_data)
+            return candidate
 
 
 class StaffRegistrationSerializer(serializers.ModelSerializer):
@@ -370,36 +380,44 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
     """
 
     user = UserSerializer()
-    password = serializers.CharField(write_only=True)
+    password1 = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
 
     class Meta:
         model = Staff
-        fields = ["user", "password", "phone", "occupation", "profile_photo"]
-
-    def validate_password(self, password):
+        fields = ["user", "password1", "password2", "phone", "occupation", "profile_photo"]
+        
+    def validate(self, data):
+        if data["password1"] != data["password2"]:
+            raise serializers.ValidationError({"password2": "Passwords do not match."})
+        return data
+    
+    def validate_password1(self, value):
         """
         Custom password validation using Django's built-in validators.
         """
         try:
-            password_validation.validate_password(password)
+            password_validation.validate_password(value)
         except ValidationError as e:
             raise serializers.ValidationError(list(e.messages))
-        return password
-    
+        return value
+
     def create(self, validated_data):
         user_data = validated_data.pop("user")
-        password = validated_data.pop("password")
+        password, _ = validated_data.pop("password1"), validated_data.pop("password2")
 
-        user = User.objects.create_user(
-            username=user_data["username"],
-            email=user_data["email"],
-            first_name=user_data.get("first_name", ""),
-            last_name=user_data.get("last_name", ""),
-            password=password,
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=user_data["username"],
+                email=user_data["email"],
+                first_name=user_data.get("first_name", ""),
+                last_name=user_data.get("last_name", ""),
+                password=password,
+            )
 
-        staff = Staff.objects.create(user=user, **validated_data)
-        return staff
+            staff = Staff.objects.create(user=user, **validated_data)
+            return staff
+
 
 class CandidateAnswerSerializer(serializers.ModelSerializer):
     """

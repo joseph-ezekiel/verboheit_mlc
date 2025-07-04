@@ -1,119 +1,30 @@
 import pytest
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from api.models import Candidate, Staff
+from api.models import Candidate
+from api.tests.conftest import create_dummy_user
 
 User = get_user_model()
-
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
 
 @pytest.fixture
 def candidate_me_url():
     return reverse("v1:api-candidate-me")
 
-
 @pytest.fixture
 def candidate_list_url():
     return reverse("v1:api-candidate-list")
-
 
 @pytest.fixture
 def candidate_detail_url():
     def _detail_url(candidate_id):
         return reverse("v1:api-candidate-detail", kwargs={"candidate_id": candidate_id})
-
     return _detail_url
-
 
 @pytest.fixture
 def candidate_role_assign_url():
     def _assign_role_url(candidate_id):
-        return reverse(
-            "v1:api-candidate-role-assign", kwargs={"candidate_id": candidate_id}
-        )
-
+        return reverse("v1:api-candidate-role-assign", kwargs={"candidate_id": candidate_id})
     return _assign_role_url
-
-
-@pytest.fixture
-def create_logged_in_screening_candidate(api_client):
-    def do_create(username="patrick", email="patrick@test.com", password="password123"):
-        user = User.objects.create_user(
-            username=username, email=email, password=password
-        )
-        candidate = Candidate.objects.create(user=user, role="screening")
-        refresh = RefreshToken.for_user(candidate.user)
-        api_client.force_authenticate(user=candidate.user)
-        return candidate, str(refresh), str(refresh.access_token)
-
-    return do_create
-
-
-@pytest.fixture
-def create_logged_in_staff(api_client):
-    def do_create(username="patrick", email="patrick@test.com", password="password123"):
-        user = User.objects.create_user(
-            username=username, email=email, password=password
-        )
-        staff = Staff.objects.create(user=user)
-        refresh = RefreshToken.for_user(staff.user)
-        api_client.force_authenticate(user=staff.user)
-        return staff, str(refresh), str(refresh.access_token)
-
-    return do_create
-
-
-@pytest.fixture
-def create_logged_in_volunteer(api_client):
-    def do_create(
-        username="volunteer", email="volunteer@test.com", password="password123"
-    ):
-        user = User.objects.create_user(
-            username=username, email=email, password=password
-        )
-        staff = Staff.objects.create(user=user, role="volunteer")
-        refresh = RefreshToken.for_user(staff.user)
-        api_client.force_authenticate(user=staff.user)
-        return staff, str(refresh), str(refresh.access_token)
-
-    return do_create
-
-
-@pytest.fixture
-def create_logged_in_moderator(api_client):
-    def do_create(
-        username="moderator", email="moderator@test.com", password="password123"
-    ):
-        user = User.objects.create_user(
-            username=username, email=email, password=password
-        )
-        staff = Staff.objects.create(user=user, role="moderator")
-        refresh = RefreshToken.for_user(staff.user)
-        api_client.force_authenticate(user=staff.user)
-        return staff, str(refresh), str(refresh.access_token)
-
-    return do_create
-
-
-@pytest.fixture
-def create_logged_in_admin(api_client):
-    def do_create(username="admin", email="admin@test.com", password="password123"):
-        user = User.objects.create_user(
-            username=username, email=email, password=password
-        )
-        staff = Staff.objects.create(user=user, role="admin")
-        refresh = RefreshToken.for_user(staff.user)
-        api_client.force_authenticate(user=staff.user)
-        return staff, str(refresh), str(refresh.access_token)
-
-    return do_create
 
 
 @pytest.mark.django_db
@@ -169,9 +80,7 @@ class TestCandidateDetail:
         self, api_client, candidate_detail_url, create_logged_in_screening_candidate
     ):
         _, _, access = create_logged_in_screening_candidate()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(candidate_detail_url(candidate.user.id))
@@ -181,9 +90,7 @@ class TestCandidateDetail:
         self, api_client, candidate_detail_url, create_logged_in_moderator
     ):
         _, _, access = create_logged_in_moderator()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(candidate_detail_url(candidate.user.id))
@@ -193,9 +100,7 @@ class TestCandidateDetail:
         self, api_client, candidate_detail_url, create_logged_in_admin
     ):
         _, _, access = create_logged_in_admin()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(candidate_detail_url(candidate.user.id))
@@ -205,9 +110,7 @@ class TestCandidateDetail:
         self, api_client, candidate_detail_url, create_logged_in_admin
     ):
         _, _, access = create_logged_in_admin()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         data = {
@@ -224,9 +127,7 @@ class TestCandidateDetail:
         self, api_client, candidate_detail_url, create_logged_in_admin
     ):
         _, _, access = create_logged_in_admin()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.delete(candidate_detail_url(candidate.user.id))
@@ -239,9 +140,7 @@ class TestAssignCandidateRole:
         self, api_client, candidate_role_assign_url, create_logged_in_admin
     ):
         _, _, access = create_logged_in_admin()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         data = {"role": "league"}
@@ -254,9 +153,7 @@ class TestAssignCandidateRole:
         self, api_client, candidate_role_assign_url, create_logged_in_moderator
     ):
         _, _, access = create_logged_in_moderator()
-        user = User.objects.create_user(
-            username="spongebob", email="spongebob@test.com", password="pineapple"
-        )
+        user = create_dummy_user()
         candidate = Candidate.objects.create(user=user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         data = {"role": "league"}

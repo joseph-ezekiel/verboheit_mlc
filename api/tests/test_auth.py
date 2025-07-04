@@ -1,18 +1,8 @@
 import pytest
-
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
-
 User = get_user_model()
-
-
-@pytest.fixture
-def api_client():
-    return APIClient()
-
 
 @pytest.fixture
 def valid_candidate_data():
@@ -23,11 +13,11 @@ def valid_candidate_data():
             "last_name": "Star",
             "email": "patrickstar@gmail.com",
         },
-        "password": "bikinibottom",
+        "password1": "bikinibottom",
+        "password2": "bikinibottom",
         "phone": "08033353762",
         "school": "Bikini Bottom College",
     }
-
 
 @pytest.fixture
 def valid_staff_data():
@@ -38,42 +28,37 @@ def valid_staff_data():
             "last_name": "Star",
             "email": "patrickstar@gmail.com",
         },
-        "password": "bikinibottom",
+        "password1": "bikinibottom",
+        "password2": "bikinibottom",
         "phone": "08033353762",
         "occupation": "SpongeBob's bestfriend",
     }
-
 
 @pytest.fixture
 def candidate_registration_url():
     return reverse("v1:api-register-candidate")
 
-
 @pytest.fixture
 def staff_registration_url():
     return reverse("v1:api-register-staff")
-
 
 @pytest.fixture
 def login_url():
     return reverse("v1:api-login")
 
-
 @pytest.fixture
 def logout_url():
     return reverse("v1:api-logout")
-
 
 @pytest.fixture
 def create_logged_in_user(api_client):
     def do_create(username="patrick", password="password123"):
         user = User.objects.create_user(username=username, password=password)
+        from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
         api_client.force_authenticate(user=user)
         return user, str(refresh), str(refresh.access_token)
-
     return do_create
-
 
 @pytest.mark.django_db
 class TestCandidateRegistration:
@@ -126,7 +111,7 @@ class TestCandidateRegistration:
     def test_weak_password(
         self, api_client, candidate_registration_url, valid_candidate_data
     ):
-        valid_candidate_data["password"] = "123"
+        valid_candidate_data["password1"] = "123"
         valid_candidate_data["user"]["email"] = "patrickstar@gmail.com"
         response = api_client.post(
             candidate_registration_url, valid_candidate_data, format="json"
@@ -148,7 +133,7 @@ class TestCandidateRegistration:
     def test_missing_user_fields(self, api_client, candidate_registration_url):
         data = {
             "user": {"username": "patrick"},
-            "password": "bikinibottom",
+            "password1": "bikinibottom",
         }
         response = api_client.post(candidate_registration_url, data, format="json")
         assert response.status_code == 400
@@ -168,7 +153,8 @@ class TestCandidateRegistration:
                 "last_name": "User",
                 "email": "newuser@test.com",
             },
-            "password": "bikinibottom",
+            "password1": "bikinibottom",
+            "password2": "bikinibottom",
             "phone": "08033353762",
             "school": "Test School",
         }
@@ -178,7 +164,7 @@ class TestCandidateRegistration:
     def test_missing_password(
         self, api_client, candidate_registration_url, valid_candidate_data
     ):
-        del valid_candidate_data["password"]
+        del valid_candidate_data["password1"]
         response = api_client.post(
             candidate_registration_url, valid_candidate_data, format="json"
         )
@@ -248,7 +234,7 @@ class TestStaffRegistration:
         assert "Registration failed" in response.data["error"]
 
     def test_weak_password(self, api_client, staff_registration_url, valid_staff_data):
-        valid_staff_data["password"] = "123"
+        valid_staff_data["password1"] = "123"
         valid_staff_data["user"]["email"] = "patrickstar@gmail.com"
         response = api_client.post(
             staff_registration_url, valid_staff_data, format="json"
@@ -270,7 +256,7 @@ class TestStaffRegistration:
             "user": {
                 "username": "patrick",
             },
-            "password": "bikinibottom",
+            "password1": "bikinibottom",
         }
         response = api_client.post(staff_registration_url, data, format="json")
         assert response.status_code == 400
@@ -290,7 +276,8 @@ class TestStaffRegistration:
                 "last_name": "User",
                 "email": "newuser@test.com",
             },
-            "password": "bikinibottom",
+            "password1": "bikinibottom",
+            "password2": "bikinibottom",
             "phone": "08033353762",
             "school": "Test School",
         }
@@ -300,7 +287,7 @@ class TestStaffRegistration:
     def test_missing_password(
         self, api_client, staff_registration_url, valid_staff_data
     ):
-        del valid_staff_data["password"]
+        del valid_staff_data["password1"]
         response = api_client.post(
             staff_registration_url, valid_staff_data, format="json"
         )

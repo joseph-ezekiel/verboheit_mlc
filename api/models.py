@@ -2,6 +2,7 @@
 Core database models for candidate assessments and staff administration.
 
 Includes models for:
+- CustomUser with email as unique identifier
 - Candidate and their role-based progression
 - Staff and administrative roles
 - Exams and questions
@@ -10,10 +11,18 @@ Includes models for:
 
 from django.db import models
 from django.db.models import Sum, Avg, Count
+from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
-from django.contrib.postgres.fields import JSONField
 
 User = get_user_model()
+# class CustomUser(AbstractUser):
+#     """
+#     Custom user model with unique email and username login support.
+#     Users can log in with either username or email.
+#     """
+#     email = models.EmailField(unique=True)
+#     # USERNAME_FIELD = "email"
+#     # REQUIRED_FIELDS = []
 
 
 class CandidateManager(models.Manager):
@@ -61,9 +70,12 @@ class Candidate(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     school = models.CharField(max_length=150)
     profile_photo = models.ImageField(
-        upload_to="profiles/", default="profiles/default.png", blank=True, null=True
+        upload_to="candidate_profile_photos/",
+        default="candidate_profile_photos/default.png",
+        null=True,
+        blank=True,
     )
-    id_card = models.ImageField(upload_to="id_cards/", blank=True, null=True)
+    id_card = models.ImageField(upload_to="candidate_id_cards/", blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     is_verified = models.BooleanField(default=False)
@@ -132,7 +144,11 @@ class Candidate(models.Model):
             "scores": [
                 {
                     "exam_id": s.exam.id,
-                    # ... extend as needed ...
+                    "exam_title": s.exam.title,
+                    "score": float(s.score),
+                    "date_recorded": s.date_recorded.isoformat(),
+                    "submitted_by": s.submitted_by.user.get_full_name() if s.submitted_by else None,
+                    "auto_score": s.auto_score
                 }
                 for s in self.scores.all()
             ],
@@ -158,8 +174,8 @@ class Staff(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     profile_photo = models.ImageField(
-        upload_to="staff_profiles/",
-        default="staff_profiles/default.png",
+        upload_to="staff_profile_photos/",
+        default="staff_profile_photos/default.png",
         blank=True,
         null=True,
     )
@@ -178,6 +194,7 @@ class Question(models.Model):
     """
     A question belonging to one or more exams. Includes text, difficulty, and staff author.
     """
+
     QUESTION_OPTIONS = [
         ("A", "Option A"),
         ("B", "Option B"),
@@ -263,7 +280,7 @@ class Exam(models.Model):
         Returns only exams marked as active.
         """
         return cls.objects.filter(is_active=True)
-    
+
     @property
     def is_currently_open(self):
         """
@@ -273,6 +290,7 @@ class Exam(models.Model):
         """
         from django.utils import timezone
         from datetime import timedelta
+
         if not self.is_active:
             return False
         if self.exam_date is None:
@@ -280,7 +298,7 @@ class Exam(models.Model):
         now = timezone.now()
         end_time = self.exam_date + timedelta(hours=self.open_duration_hours)
         return self.exam_date <= now <= end_time
-        
+
     def get_question_count(self):
         """
         Returns the number of questions in the exam.
@@ -305,7 +323,7 @@ class CandidateScore(models.Model):
         "Candidate", on_delete=models.CASCADE, related_name="scores"
     )
     exam = models.ForeignKey("Exam", on_delete=models.CASCADE)
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=1)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     date_recorded = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     submitted_by = models.ForeignKey(
@@ -317,26 +335,31 @@ class CandidateScore(models.Model):
         unique_together = ("candidate", "exam")
         ordering = ["-date_recorded"]
 
+
 class CandidateAnswer(models.Model):
-    candidate_score = models.ForeignKey("CandidateScore", related_name="answers", on_delete=models.CASCADE)
+    candidate_score = models.ForeignKey(
+        "CandidateScore", related_name="answers", on_delete=models.CASCADE
+    )
     question = models.ForeignKey("Question", on_delete=models.CASCADE)
     selected_option = models.CharField(
         max_length=1,
         choices=Question.QUESTION_OPTIONS,
-        blank=True, default="",
+        blank=True,
+        default="",
     )
     answered_at = models.DateField(auto_now=True)
-    
+
     class Meta:
-        unique_together = ('candidate_score', 'question')
-        
+        unique_together = ("candidate_score", "question")
+
+
 class LeaderboardSnapshot(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     data = models.JSONField()
-    
+
     published_by = models.ForeignKey(
         "Staff", on_delete=models.SET_NULL, null=True, blank=True
     )
-    
+
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]

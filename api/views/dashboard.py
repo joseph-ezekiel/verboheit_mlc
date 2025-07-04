@@ -3,6 +3,9 @@ Dashboard and account management views for candidates and staff members.
 """
 
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
+
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -13,13 +16,14 @@ from ..permissions import StaffWithRole, IsCandidate, IsStaff
 from ..serializers import (
     CandidateDetailSerializer,
     StaffDetailSerializer,
-    User,
     UserSerializer,
 )
 from ..utils.dashboard_utils import (
     get_candidate_dashboard_data,
     get_staff_dashboard_data,
 )
+
+User = get_user_model()
 
 
 @api_view(["GET"])
@@ -68,6 +72,7 @@ class AccountManagementView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request, user_id=None):
         """
@@ -131,7 +136,7 @@ class AccountManagementView(APIView):
             return user
 
         user_data = request.data.get("user", {})
-        profile_data = request.data.get("profile", {})
+        profile_data = request.data.copy()
 
         user_serializer = UserSerializer(user, data=user_data, partial=partial)
         profile_serializer = self._get_profile_serializer(user, profile_data, partial)
