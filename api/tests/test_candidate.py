@@ -6,24 +6,32 @@ from api.tests.conftest import create_dummy_user
 
 User = get_user_model()
 
+
 @pytest.fixture
 def candidate_me_url():
     return reverse("v1:api-candidate-me")
+
 
 @pytest.fixture
 def candidate_list_url():
     return reverse("v1:api-candidate-list")
 
+
 @pytest.fixture
 def candidate_detail_url():
     def _detail_url(candidate_id):
         return reverse("v1:api-candidate-detail", kwargs={"candidate_id": candidate_id})
+
     return _detail_url
+
 
 @pytest.fixture
 def candidate_role_assign_url():
     def _assign_role_url(candidate_id):
-        return reverse("v1:api-candidate-role-assign", kwargs={"candidate_id": candidate_id})
+        return reverse(
+            "v1:api-candidate-role-assign", kwargs={"candidate_id": candidate_id}
+        )
+
     return _assign_role_url
 
 

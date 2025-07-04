@@ -3,63 +3,84 @@ from django.urls import reverse
 
 from api.models import Exam
 
+
 @pytest.fixture
 def exam_list_url():
     return reverse("v1:api-exam-list")
+
 
 @pytest.fixture
 def exam_detail_url():
     def _detail_url(exam_id):
         return reverse("v1:api-exam-detail", kwargs={"exam_id": exam_id})
+
     return _detail_url
+
 
 @pytest.fixture
 def exam_questions_url():
     def _questions_url(exam_id):
         return reverse("v1:api-exam-questions", kwargs={"exam_id": exam_id})
+
     return _questions_url
+
 
 @pytest.fixture
 def take_exam_url():
     def _take_exam_url(exam_id):
         return reverse("v1:api-take-exam", kwargs={"exam_id": exam_id})
+
     return _take_exam_url
+
 
 @pytest.mark.django_db
 class TestExamList:
-    def test_exam_list_by_candidate_fail(self, api_client, exam_list_url, create_logged_in_screening_candidate):
+    def test_exam_list_by_candidate_fail(
+        self, api_client, exam_list_url, create_logged_in_screening_candidate
+    ):
         _, _, access = create_logged_in_screening_candidate()
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(exam_list_url)
         assert response.status_code == 403
 
-    def test_exam_list_by_volunteer_fail(self, api_client, exam_list_url, create_logged_in_volunteer):
+    def test_exam_list_by_volunteer_fail(
+        self, api_client, exam_list_url, create_logged_in_volunteer
+    ):
         _, _, access = create_logged_in_volunteer()
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(exam_list_url)
         assert response.status_code == 403
 
-    def test_exam_list_by_moderator_fail(self, api_client, exam_list_url, create_logged_in_moderator):
+    def test_exam_list_by_moderator_fail(
+        self, api_client, exam_list_url, create_logged_in_moderator
+    ):
         _, _, access = create_logged_in_moderator()
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(exam_list_url)
         assert response.status_code == 403
 
-    def test_exam_list_by_admin_success(self, api_client, exam_list_url, create_logged_in_admin):
+    def test_exam_list_by_admin_success(
+        self, api_client, exam_list_url, create_logged_in_admin
+    ):
         _, _, access = create_logged_in_admin()
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(exam_list_url)
         assert response.status_code == 200
 
-    def test_exam_list_by_owner_success(self, api_client, exam_list_url, create_logged_in_owner):
+    def test_exam_list_by_owner_success(
+        self, api_client, exam_list_url, create_logged_in_owner
+    ):
         _, _, access = create_logged_in_owner()
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(exam_list_url)
         assert response.status_code == 200
 
+
 @pytest.mark.django_db
 class TestSetExam:
-    def test_set_exam_by_moderator_fail(self, api_client, exam_list_url, create_logged_in_moderator):
+    def test_set_exam_by_moderator_fail(
+        self, api_client, exam_list_url, create_logged_in_moderator
+    ):
         staff, _, access = create_logged_in_moderator()
         data = {
             "stage": "league",
@@ -68,13 +89,15 @@ class TestSetExam:
             "is_active": True,
             "open_duration_hours": 12,
             "countdown_minutes": 60,
-            "questions": []
+            "questions": [],
         }
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.post(exam_list_url, data, format="json")
         assert response.status_code == 403
 
-    def test_set_exam_by_admin_success(self, api_client, exam_list_url, create_logged_in_admin):
+    def test_set_exam_by_admin_success(
+        self, api_client, exam_list_url, create_logged_in_admin
+    ):
         staff, _, access = create_logged_in_admin()
         data = {
             "stage": "league",
@@ -83,13 +106,15 @@ class TestSetExam:
             "is_active": True,
             "open_duration_hours": 12,
             "countdown_minutes": 60,
-            "questions": []
+            "questions": [],
         }
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.post(exam_list_url, data, format="json")
         assert response.status_code == 201
 
-    def test_set_exam_by_owner_success(self, api_client, exam_list_url, create_logged_in_owner):
+    def test_set_exam_by_owner_success(
+        self, api_client, exam_list_url, create_logged_in_owner
+    ):
         staff, _, access = create_logged_in_owner()
         data = {
             "stage": "league",
@@ -98,15 +123,18 @@ class TestSetExam:
             "is_active": True,
             "open_duration_hours": 2,
             "countdown_minutes": 60,
-            "questions": []
+            "questions": [],
         }
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.post(exam_list_url, data, format="json")
         assert response.status_code == 201
 
+
 @pytest.mark.django_db
 class TestExamDetail:
-    def test_update_exam_by_admin_success(self, api_client, exam_detail_url, create_logged_in_admin):
+    def test_update_exam_by_admin_success(
+        self, api_client, exam_detail_url, create_logged_in_admin
+    ):
         staff, _, access = create_logged_in_admin()
         data = {
             "stage": "league",
@@ -115,19 +143,19 @@ class TestExamDetail:
             "is_active": True,
             "open_duration_hours": "2",
             "countdown_minutes": "60",
-            "created_by": staff
+            "created_by": staff,
         }
         exam = Exam.objects.create(**data)
-        update_data = {
-            "stage": "screening",
-            "title": "Exam",
-            "updated_by": staff.pk
-        }
+        update_data = {"stage": "screening", "title": "Exam", "updated_by": staff.pk}
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
-        response = api_client.patch(exam_detail_url(exam.id), update_data, format="json")
+        response = api_client.patch(
+            exam_detail_url(exam.id), update_data, format="json"
+        )
         assert response.status_code == 200
 
-    def test_replace_exam_by_admin_success(self, api_client, exam_detail_url, create_logged_in_admin):
+    def test_replace_exam_by_admin_success(
+        self, api_client, exam_detail_url, create_logged_in_admin
+    ):
         staff, _, access = create_logged_in_admin()
         data = {
             "stage": "league",
@@ -146,13 +174,15 @@ class TestExamDetail:
             "is_active": True,
             "open_duration_hours": 2,
             "countdown_minutes": 60,
-            "questions": []
+            "questions": [],
         }
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.put(exam_detail_url(exam.id), replace_data, format="json")
         assert response.status_code == 200
 
-    def test_delete_exam_by_admin_success(self, api_client, exam_detail_url, create_logged_in_admin):
+    def test_delete_exam_by_admin_success(
+        self, api_client, exam_detail_url, create_logged_in_admin
+    ):
         staff, _, access = create_logged_in_admin()
         data = {
             "stage": "league",
@@ -161,12 +191,13 @@ class TestExamDetail:
             "is_active": True,
             "open_duration_hours": "2",
             "countdown_minutes": "60",
-            "created_by": staff
+            "created_by": staff,
         }
         exam = Exam.objects.create(**data)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.delete(exam_detail_url(exam.id))
         assert response.status_code in [200, 204]
+
 
 @pytest.mark.django_db
 class TestExamQuestions:
@@ -223,7 +254,7 @@ class TestExamQuestions:
         exam = Exam.objects.create()
         response = api_client.get(exam_questions_url(exam.id))
         assert response.status_code == 200
-    
+
     def test_list_exam_questions_by_owner_success(
         self, api_client, exam_questions_url, create_logged_in_owner
     ):
@@ -241,6 +272,7 @@ class TestExamQuestions:
         exam = Exam.objects.create()
         response = api_client.get(exam_questions_url(exam.id))
         assert response.status_code == 200
+
 
 @pytest.mark.django_db
 class TestCandidateTakeExam:
@@ -294,7 +326,7 @@ class TestCandidateTakeExam:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(take_exam_url(exam.id))
         assert response.status_code == 200
-    
+
     def test_take_exam_by_league_candidate_fail(
         self, api_client, take_exam_url, create_logged_in_league_candidate
     ):
@@ -311,7 +343,7 @@ class TestCandidateTakeExam:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
         response = api_client.get(take_exam_url(exam.id))
         assert response.status_code == 403
-    
+
     def test_take_exam_by_staff_fail(
         self, api_client, take_exam_url, create_logged_in_moderator
     ):

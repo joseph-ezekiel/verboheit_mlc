@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 @pytest.fixture
 def valid_candidate_data():
     return {
@@ -18,6 +19,7 @@ def valid_candidate_data():
         "phone": "08033353762",
         "school": "Bikini Bottom College",
     }
+
 
 @pytest.fixture
 def valid_staff_data():
@@ -34,31 +36,39 @@ def valid_staff_data():
         "occupation": "SpongeBob's bestfriend",
     }
 
+
 @pytest.fixture
 def candidate_registration_url():
     return reverse("v1:api-register-candidate")
+
 
 @pytest.fixture
 def staff_registration_url():
     return reverse("v1:api-register-staff")
 
+
 @pytest.fixture
 def login_url():
     return reverse("v1:api-login")
 
+
 @pytest.fixture
 def logout_url():
     return reverse("v1:api-logout")
+
 
 @pytest.fixture
 def create_logged_in_user(api_client):
     def do_create(username="patrick", password="password123"):
         user = User.objects.create_user(username=username, password=password)
         from rest_framework_simplejwt.tokens import RefreshToken
+
         refresh = RefreshToken.for_user(user)
         api_client.force_authenticate(user=user)
         return user, str(refresh), str(refresh.access_token)
+
     return do_create
+
 
 @pytest.mark.django_db
 class TestCandidateRegistration:

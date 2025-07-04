@@ -21,7 +21,7 @@ from .views import (
     candidate,
     dashboard,
     exam,
-    leaderboard,    
+    leaderboard,
     question,
     score,
     staff,
@@ -102,9 +102,11 @@ urlpatterns = [
         score.submit_exam_score_api,
         name="api-submit-exam-score",
     ),
-    path("exams/<int:exam_id>/submit-exam-answers/",
-         answers.submit_exam_answers,
-         name="api-submit-exam-answers"),
+    path(
+        "exams/<int:exam_id>/submit-exam-answers/",
+        answers.submit_exam_answers,
+        name="api-submit-exam-answers",
+    ),
     # === QUESTIONS ===
     path("questions/", question.question_list_api, name="api-question-list"),
     path(
@@ -131,6 +133,14 @@ urlpatterns = [
         name="api-account-management-detail",
     ),
     # === LEADERBOARD ===
-    path("leaderboard/publish/", leaderboard.publish_leaderboard, name="api-publish-leaderboard"), 
-    path("load-leaderboard/", leaderboard.load_leaderboard_api, name="api-load-leaderboard"),
+    path(
+        "leaderboard/publish/",
+        leaderboard.publish_leaderboard,
+        name="api-publish-leaderboard",
+    ),
+    path(
+        "load-leaderboard/",
+        leaderboard.load_leaderboard_api,
+        name="api-load-leaderboard",
+    ),
 ]

@@ -37,7 +37,8 @@ def get_candidate_dashboard_data(candidate):
     lowest_score = scores.aggregate(min=Min("score"))["min"] or 0
 
     available_exams = [
-        exam for exam in Exam.objects.filter(stage=candidate.role, is_active=True)
+        exam
+        for exam in Exam.objects.filter(stage=candidate.role, is_active=True)
         if exam.is_currently_open
     ]
     recent_scores = scores.order_by("-date_recorded")[:5]
@@ -174,9 +175,9 @@ def get_staff_dashboard_data(staff):
         "candidate__user", "exam"
     ).order_by("-date_recorded")[:10]
 
-    upcoming_exams = Exam.objects.filter(
-        exam_date__gte=now, is_active=True
-    ).order_by("exam_date")[:5]
+    upcoming_exams = Exam.objects.filter(exam_date__gte=now, is_active=True).order_by(
+        "exam_date"
+    )[:5]
 
     staff_info = {
         "id": staff.user.id,

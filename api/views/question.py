@@ -29,7 +29,7 @@ def question_list_api(request):
         - Only accessible to staff with role: moderator, admin, or owner.
     """
     if request.method == "GET":
-        questions = Question.objects.all().order_by('-date_created')
+        questions = Question.objects.all().order_by("-date_created")
         questions = filter_questions(questions, request.query_params)
         return paginate_queryset(questions, request, QuestionSerializer)
 

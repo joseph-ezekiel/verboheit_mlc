@@ -1,6 +1,7 @@
 """
 Utility function to serialize candidate details along with score summaries.
 """
+
 from django.utils import timezone
 
 
@@ -43,10 +44,14 @@ def get_candidate_with_scores(candidate):
                     "score": float(s.score),
                     "date_recorded": s.date_recorded,
                     "last_updated": s.date_updated,
-                    "submitted_by": {
-                        "id": s.submitted_by.user.id,
-                        "name": s.submitted_by.user.get_full_name()
-                    } if s.submitted_by else None
+                    "submitted_by": (
+                        {
+                            "id": s.submitted_by.user.id,
+                            "name": s.submitted_by.user.get_full_name(),
+                        }
+                        if s.submitted_by
+                        else None
+                    ),
                 }
                 for s in candidate.scores.all().select_related("exam", "submitted_by")
             ],
@@ -55,6 +60,7 @@ def get_candidate_with_scores(candidate):
         }
     )
     return data
+
 
 def auto_score(candidate_score):
     """
@@ -67,7 +73,9 @@ def auto_score(candidate_score):
     print(f"Total Questions in Exam: {total_questions}")
 
     correct_count = sum(
-        1 for answer in answers if answer.selected_option == answer.question.correct_answer
+        1
+        for answer in answers
+        if answer.selected_option == answer.question.correct_answer
     )
     print(f"Correct Answers: {correct_count}")
 

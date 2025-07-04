@@ -3,25 +3,32 @@ from django.urls import reverse
 from api.tests.conftest import create_dummy_user
 from api.models import Staff, User
 
+
 @pytest.fixture
 def staff_me_url():
     return reverse("v1:api-staff-me")
+
 
 @pytest.fixture
 def staff_list_url():
     return reverse("v1:api-staff-list")
 
+
 @pytest.fixture
 def staff_detail_url():
     def _detail_url(staff_id):
         return reverse("v1:api-staff-detail", kwargs={"staff_id": staff_id})
+
     return _detail_url
+
 
 @pytest.fixture
 def staff_role_assign_url():
     def _assign_role_url(staff_id):
         return reverse("v1:api-staff-role-assign", kwargs={"staff_id": staff_id})
+
     return _assign_role_url
+
 
 @pytest.mark.django_db
 class TestStaffMe:

@@ -12,7 +12,6 @@ import django_filters
 from ..models import Exam
 
 
-
 def filter_candidates(queryset, params):
     """
     Filter candidate queryset based on optional query parameters.
@@ -131,13 +130,16 @@ class ExamFilter(django_filters.FilterSet):
         queryset (QuerySet): The initial Exam queryset.
         params (QueryDict): The request query parameters.
     """
-    search = django_filters.CharFilter(method='filter_search', label="Search")
-    date_created = django_filters.DateFilter(field_name='date_created', lookup_expr='date')
+
+    search = django_filters.CharFilter(method="filter_search", label="Search")
+    date_created = django_filters.DateFilter(
+        field_name="date_created", lookup_expr="date"
+    )
 
     class Meta:
         model = Exam
-        fields = ('search', 'date_created')
-        
+        fields = ("search", "date_created")
+
     def filter_search(self, queryset, name, value):
         """Custom filter method for search functionality"""
         if value:

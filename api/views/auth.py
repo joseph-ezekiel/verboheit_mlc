@@ -51,9 +51,7 @@ def api_root(request, format=None):
     def safe_reverse(name, **kwargs):
         """Safely generate URLs, return None if route doesn't exist"""
         try:
-            return reverse(
-                name, request=request, format=format, **kwargs
-            )
+            return reverse(name, request=request, format=format, **kwargs)
         except NoReverseMatch:
             return None
 
@@ -120,7 +118,7 @@ def api_root(request, format=None):
                     ),
                     "submit-exam-answers": generate_url_with_placeholder(
                         "v1:api-submit-exam-answers", "<exam_id>", "exam_id"
-                    )
+                    ),
                 },
             },
             "questions": {
@@ -141,8 +139,8 @@ def api_root(request, format=None):
             },
             "leaderboard": {
                 "publish-leaderboard": safe_reverse("v1:api-publish-leaderboard"),
-                "load-leaderboard": safe_reverse("v1:api-load-leaderboard")
-            }
+                "load-leaderboard": safe_reverse("v1:api-load-leaderboard"),
+            },
         }
     )
 
@@ -154,7 +152,7 @@ class BaseRegistrationView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return Response({'error': 'Already authenticated'}, status=400)
+            return Response({"error": "Already authenticated"}, status=400)
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

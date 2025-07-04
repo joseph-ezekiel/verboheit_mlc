@@ -6,31 +6,31 @@ Used to reduce duplication across view logic.
 from rest_framework.response import Response
 
 
-def handle_update_delete(request, obj, serializer_class):
-    """
-    Generic helper for handling update and delete operations (PUT, PATCH, DELETE)
-    on a model instance using a DRF serializer.
+# def handle_update_delete(request, obj, serializer_class):
+#     """
+#     Generic helper for handling update and delete operations (PUT, PATCH, DELETE)
+#     on a model instance using a DRF serializer.
 
-    Args:
-        request (HttpRequest): The incoming request object.
-        obj (Model): The model instance to update or delete.
-        serializer_class (Serializer): The DRF serializer class to validate and save data.
+#     Args:
+#         request (HttpRequest): The incoming request object.
+#         obj (Model): The model instance to update or delete.
+#         serializer_class (Serializer): The DRF serializer class to validate and save data.
 
-    Returns:
-        Response: DRF Response containing serialized data, error messages, or status code.
-    """
-    if request.method == "DELETE":
-        obj.delete()
-        return Response(status=204)
+#     Returns:
+#         Response: DRF Response containing serialized data, error messages, or status code.
+#     """
+#     if request.method == "DELETE":
+#         obj.delete()
+#         return Response(status=204)
 
-    serializer = serializer_class(
-        obj, data=request.data, partial=(request.method == "PATCH")
-    )
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
+#     serializer = serializer_class(
+#         obj, data=request.data, partial=(request.method == "PATCH")
+#     )
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data)
 
-    return Response(serializer.errors, status=400)
+#     return Response(serializer.errors, status=400)
 
 
 def validate_role(role, model_class):

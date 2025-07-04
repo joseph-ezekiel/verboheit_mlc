@@ -3,15 +3,19 @@ from django.urls import reverse
 
 from api.models import Question
 
+
 @pytest.fixture
 def question_list_url():
     return reverse("v1:api-question-list")
+
 
 @pytest.fixture
 def question_detail_url():
     def _detail_url(question_id):
         return reverse("v1:api-question-detail", kwargs={"question_id": question_id})
+
     return _detail_url
+
 
 @pytest.mark.django_db
 class TestQuestionList:

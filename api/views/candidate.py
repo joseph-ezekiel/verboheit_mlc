@@ -1,6 +1,7 @@
 """
 API views specific to candidates.
 """
+
 import logging
 
 from django.db.models import Prefetch
@@ -62,7 +63,9 @@ class CandidateListView(ListAPIView):
         """
         Returns a filtered queryset of candidates based on request query parameters.
         """
-        return filter_candidates(Candidate.objects.all().order_by('-date_created'), self.request.query_params)
+        return filter_candidates(
+            Candidate.objects.all().order_by("-date_created"), self.request.query_params
+        )
 
 
 class CandidateDetailView(RetrieveUpdateDestroyAPIView):
@@ -111,10 +114,12 @@ class CandidateDetailView(RetrieveUpdateDestroyAPIView):
         Soft-delete staff by setting `is_active` to False.
         """
         logger.info(
-            f"Soft-deleting candidate {instance.pk}", extra={"user": self.request.user.id}
+            f"Soft-deleting candidate {instance.pk}",
+            extra={"user": self.request.user.id},
         )
         instance.is_active = False
         instance.save()
+
 
 class AssignCandidateRoleView(UpdateAPIView):
     """

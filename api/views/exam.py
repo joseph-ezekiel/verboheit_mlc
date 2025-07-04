@@ -19,7 +19,7 @@ from ..serializers import (
     ExamListSerializer,
     ExamDetailSerializer,
     QuestionSerializer,
-    CandidateExamSerializer
+    CandidateExamSerializer,
 )
 from ..permissions import StaffWithRole, IsCandidate, IsLeagueCandidate
 from ..utils.query_filters import ExamFilter
@@ -51,8 +51,8 @@ class ExamListView(ListCreateAPIView):
 
     def get_queryset(self):
         """Returns a queryset of all Exam objects."""
-        return Exam.objects.all().order_by('-date_created')
-    
+        return Exam.objects.all().order_by("-date_created")
+
     def perform_create(self, serializer):
         """
         Saves the staff member who created the exam
@@ -71,7 +71,7 @@ class ExamDetailView(RetrieveUpdateDestroyAPIView):
 
     permission_classes = [IsAuthenticated, StaffWithRole(["admin", "owner"])]
     serializer_class = ExamDetailSerializer
-    queryset = Exam.objects.all().order_by('-date_created')
+    queryset = Exam.objects.all().order_by("-date_created")
     lookup_url_kwarg = "exam_id"
 
     def perform_destroy(self, instance):
@@ -97,7 +97,7 @@ class ExamQuestionsView(ListAPIView):
         Returns the queryset of questions related to a given exam.
         """
         exam = get_object_or_404(Exam, pk=self.kwargs["exam_id"])
-        return exam.questions.all().order_by('-date_created')
+        return exam.questions.all().order_by("-date_created")
 
 
 class ExamHistoryView(ListAPIView):
@@ -129,7 +129,6 @@ class ExamHistoryView(ListAPIView):
         return Response(data)
 
 
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, IsCandidate])
 def candidate_take_exam(request, exam_id):
@@ -141,4 +140,3 @@ def candidate_take_exam(request, exam_id):
 
     serializer = CandidateExamSerializer(exam)
     return Response(serializer.data)
-    

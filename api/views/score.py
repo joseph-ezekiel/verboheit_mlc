@@ -8,10 +8,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from ..models import (
-    Candidate, CandidateScore,
-    Exam
-)
+from ..models import Candidate, CandidateScore, Exam
 from ..serializers import CandidateScoreSerializer
 from ..permissions import StaffWithRole
 
@@ -76,11 +73,7 @@ def submit_exam_score_api(request, exam_id):
         _, created = CandidateScore.objects.update_or_create(
             candidate=candidate,
             exam=exam,
-            defaults={
-                "score": score,
-                "submitted_by": staff,
-                "auto_score": False
-            },
+            defaults={"score": score, "submitted_by": staff, "auto_score": False},
         )
 
         return Response(
@@ -95,7 +88,9 @@ def submit_exam_score_api(request, exam_id):
         )
 
     except AttributeError:
-        return Response({"error": "Only admin and owner staff members can submit scores."}, status=403)
+        return Response(
+            {"error": "Only admin and owner staff members can submit scores."},
+            status=403,
+        )
     except Exception as e:
         return Response({"error": str(e)}, status=400)
-

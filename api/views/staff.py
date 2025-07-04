@@ -16,14 +16,12 @@ from rest_framework.generics import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.settings import api_settings
-from django.shortcuts import get_object_or_404
 
 from ..models import Staff
 from ..permissions import StaffWithRole, IsStaff
 from ..serializers import StaffDetailSerializer, StaffListSerializer
-from ..utils.user import handle_update_delete, validate_role
+from ..utils.user import validate_role
 from ..utils.query_filters import filter_staffs
-from ..utils.pagination_helpers import paginate_queryset
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +68,9 @@ class StaffListView(ListAPIView):
         Returns:
             Filtered queryset of staff members.
         """
-        return filter_staffs(Staff.objects.all().order_by('-date_created'), self.request.query_params)
+        return filter_staffs(
+            Staff.objects.all().order_by("-date_created"), self.request.query_params
+        )
 
 
 class StaffDetailView(RetrieveUpdateDestroyAPIView):

@@ -11,8 +11,10 @@ Includes custom display, filtering, and search options for:
 
 from django.contrib import admin
 from .models import (
-    Candidate, Staff,
-    Exam, Question,
+    Candidate,
+    Staff,
+    Exam,
+    Question,
     CandidateScore,
     CandidateAnswer,
 )
@@ -100,12 +102,15 @@ class CandidateScoreAdmin(admin.ModelAdmin):
     list_display = ("id", "candidate", "exam", "score", "date_recorded", "auto_score")
     list_filter = ("exam",)
     search_fields = ("candidate__user__username", "exam__title", "auto_score")
+
+
 @admin.register(CandidateAnswer)
 class CandidateAnswerAdmin(admin.ModelAdmin):
     """
     Admin interface for the CandidateAnswer model.
     Displays answers provided by each candidate in specific exams.
     """
+
     list_display = (
         "id",
         "get_candidate",
@@ -120,8 +125,10 @@ class CandidateAnswerAdmin(admin.ModelAdmin):
 
     def get_candidate(self, obj):
         return obj.candidate_score.candidate
+
     get_candidate.short_description = "Candidate"
 
     def get_exam(self, obj):
         return obj.candidate_score.exam
+
     get_exam.short_description = "Exam"

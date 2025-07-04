@@ -16,9 +16,12 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from .models import (
-    Candidate, Staff,
-    Question, Exam,
-    CandidateScore, CandidateAnswer,
+    Candidate,
+    Staff,
+    Question,
+    Exam,
+    CandidateScore,
+    CandidateAnswer,
 )
 
 User = get_user_model()
@@ -28,8 +31,9 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Basic serializer for the Django User model.
     """
-    username = serializers.CharField(max_length=14,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+
+    username = serializers.CharField(
+        max_length=14, validators=[UniqueValidator(queryset=User.objects.all())]
     )
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -46,7 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
         )
         read_only_fields = ("id", "date_joined")
-        
+
 
 class MinimalCandidateSerializer(serializers.ModelSerializer):
     """
@@ -58,7 +62,6 @@ class MinimalCandidateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Candidate
         fields = ["user", "school"]
-    
 
 
 class CandidateListSerializer(serializers.ModelSerializer):
@@ -112,7 +115,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
             "average_score",
         )
         read_only_fields = ("date_created", "date_updated", "user")
-        
+
     def get_latest_score(self, obj):
         """
         Returns latest score for candidate if available.
@@ -135,7 +138,11 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
 
         scores = CandidateScore.objects.filter(candidate=obj)
         return [
-            {"exam": score.exam.title, "score": score.score, "date": score.date_recorded}
+            {
+                "exam": score.exam.title,
+                "score": score.score,
+                "date": score.date_recorded,
+            }
             for score in scores
         ]
 
@@ -166,6 +173,7 @@ class CandidateDetailSerializer(serializers.ModelSerializer):
             or 0
         )
 
+
 class MinimalStaffSerializer(serializers.ModelSerializer):
     """
     Minimal serializer for listing staff info.
@@ -182,6 +190,7 @@ class MinimalStaffSerializer(serializers.ModelSerializer):
             "id": obj.user.id,
             "username": obj.user.username,
         }
+
 
 class StaffListSerializer(serializers.ModelSerializer):
     """
@@ -274,17 +283,15 @@ class ExamListSerializer(serializers.ModelSerializer):
         return obj.get_question_count()
 
 
-
-
 class ExamDetailSerializer(serializers.ModelSerializer):
     """
     Detailed serializer for a single exam, including:
     - question list
     - average score
     """
+
     questions = serializers.PrimaryKeyRelatedField(
-        queryset=Question.objects.all(),
-        many=True
+        queryset=Question.objects.all(), many=True
     )
     created_by = MinimalStaffSerializer(read_only=True)
     average_score = serializers.SerializerMethodField()
@@ -385,13 +392,20 @@ class StaffRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Staff
-        fields = ["user", "password1", "password2", "phone", "occupation", "profile_photo"]
-        
+        fields = [
+            "user",
+            "password1",
+            "password2",
+            "phone",
+            "occupation",
+            "profile_photo",
+        ]
+
     def validate(self, data):
         if data["password1"] != data["password2"]:
             raise serializers.ValidationError({"password2": "Passwords do not match."})
         return data
-    
+
     def validate_password1(self, value):
         """
         Custom password validation using Django's built-in validators.
@@ -424,11 +438,13 @@ class CandidateAnswerSerializer(serializers.ModelSerializer):
     Represents a candidate's answer to a question.
     - If a question is unanswered, set 'selected_option' to an empty string "".
     """
+
     selected_option = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = CandidateAnswer
-        fields = ['question', 'selected_option']
+        fields = ["question", "selected_option"]
+
 
 class CandidateAnswerBulkSerializer(serializers.Serializer):
     answers = CandidateAnswerSerializer(many=True)
@@ -437,7 +453,8 @@ class CandidateAnswerBulkSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("At least one answer must be provided.")
         return value
-    
+
+
 class CandidateQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
@@ -449,6 +466,7 @@ class CandidateQuestionSerializer(serializers.ModelSerializer):
             "option_c",
             "option_d",
         )
+
 
 class CandidateExamSerializer(serializers.ModelSerializer):
     questions = CandidateQuestionSerializer(many=True, read_only=True)

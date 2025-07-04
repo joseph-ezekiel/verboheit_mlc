@@ -147,8 +147,10 @@ class Candidate(models.Model):
                     "exam_title": s.exam.title,
                     "score": float(s.score),
                     "date_recorded": s.date_recorded.isoformat(),
-                    "submitted_by": s.submitted_by.user.get_full_name() if s.submitted_by else None,
-                    "auto_score": s.auto_score
+                    "submitted_by": (
+                        s.submitted_by.user.get_full_name() if s.submitted_by else None
+                    ),
+                    "auto_score": s.auto_score,
                 }
                 for s in self.scores.all()
             ],
