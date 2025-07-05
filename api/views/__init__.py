@@ -14,5 +14,6 @@ from .dashboard import *
 from .exam import *
 from .leaderboard import *
 from .question import *
+from .root import *
 from .score import *
 from .staff import *

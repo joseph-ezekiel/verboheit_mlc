@@ -15,7 +15,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-DEBUG = False
+DEBUG = True if os.environ.get("DEBUG") == "True" else False
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
@@ -33,9 +33,10 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "debug_toolbar",
     "rest_framework",
+    "rest_framework_api_key",
     "rest_framework.authtoken",
-    "drf_yasg",
     "rest_framework_simplejwt",
+    "drf_yasg",
     "django_filters",
 ]
 

@@ -23,6 +23,7 @@ from .views import (
     exam,
     leaderboard,
     question,
+    root,
     score,
     staff,
 )
@@ -31,7 +32,7 @@ app_name = "api"
 
 urlpatterns = [
     # === ROOT & AUTH ===
-    path("", auth.api_root, name="api-root"),
+    path("", root.api_root, name="api-root"),
     path("auth/login/", auth.login_api, name="api-login"),
     path("auth/logout/", auth.logout_api, name="api-logout"),
     path(
