@@ -49,6 +49,7 @@ urlpatterns = [
     # === Admin Panel ===
     path("api/v1/admin/", admin.site.urls),
     # === API ===
+    path("", RedirectView.as_view(url="/api/v1/", permanent=False)),
     path(
         "api/",
         include(

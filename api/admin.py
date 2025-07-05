@@ -17,6 +17,7 @@ from .models import (
     Question,
     CandidateScore,
     CandidateAnswer,
+    LeaderboardSnapshot,
 )
 
 
@@ -132,3 +133,19 @@ class CandidateAnswerAdmin(admin.ModelAdmin):
         return obj.candidate_score.exam
 
     get_exam.short_description = "Exam"
+
+@admin.register(LeaderboardSnapshot)
+class LeaderboardSnapshotAdmin(admin.ModelAdmin):
+    """
+    Admin interface for the LeaderboardSnapshot model.
+    Displays key details about each leaderboard snapshot.
+    """
+
+    list_display = (
+        "id",
+        "data",
+        "published_by",
+        "created_at",
+    )
+    list_filter = ("created_at",)
+    search_fields = ("published_by__user__username",)
