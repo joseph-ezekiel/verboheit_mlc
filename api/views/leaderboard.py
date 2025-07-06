@@ -12,6 +12,7 @@ from rest_framework import status
 from ..models import Candidate, LeaderboardSnapshot
 from ..serializers import MinimalCandidateSerializer
 from ..permissions import IsLeagueCandidateOrStaff, StaffWithRole
+from ..models import SiteSetting
 
 
 @api_view(["POST"])
@@ -51,7 +52,30 @@ def load_leaderboard_api(request):
     """
     Returns the most recently published leaderboard snapshot.
     """
+    if not SiteSetting.get_bool("leaderboard_open", default=True):
+        return Response(
+            {"detail": "Leaderboard is currently unavailable."}, status=status.HTTP_403_FORBIDDEN
+        )
     snapshot = LeaderboardSnapshot.objects.order_by("-created_at").first()
     if not snapshot:
         return Response({"detail": "Leaderboard not published yet."}, status=404)
     return Response(snapshot.data)
+
+@api_view(["POST"])
+@permission_classes([StaffWithRole(["admin", "owner"])])
+def toggle_leaderboard(request):
+    """
+    Toggle the leaderboard status for candidates and staff.
+
+    Requires staff with 'admin' or 'owner' role.
+    """
+    open_flag = request.data.get("open", True)
+    obj, created = SiteSetting.objects.get_or_create(
+        key="leaderboard_open",
+        defaults={"value": open_flag}
+    )
+    return Response(
+        {"message": f"leaderboard_open: {obj.value}"}
+    )
+        
+    

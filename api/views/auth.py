@@ -6,61 +6,22 @@ import logging
 
 from django.contrib.auth import authenticate
 from django.urls.exceptions import NoReverseMatch
-from django.views.decorators.cache import cache_page
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_api_key.permissions import HasAPIKey
 
 from ..serializers import (
-    CandidateRegistrationSerializer,
-    StaffRegistrationSerializer,
     UserSerializer,
 )
 
+
 logger = logging.getLogger(__name__)
-
-class BaseRegistrationView(CreateAPIView):
-    """Base registration view with common logic"""
-
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return Response({"error": "Already authenticated"}, status=400)
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Registration successful"},
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(
-            {"error": "Registration failed", "details": serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-
-class CandidateRegistrationView(BaseRegistrationView):
-    """Register a new candidate"""
-
-    serializer_class = CandidateRegistrationSerializer
-    permission_classes = [HasAPIKey]
-
-
-class StaffRegistrationView(BaseRegistrationView):
-    """Register a new staff member"""
-
-    serializer_class = StaffRegistrationSerializer
-    permission_classes = [HasAPIKey]
-
 
 class LoginRateThrottle(AnonRateThrottle):
     """Throttle class for limiting anonymous login attempts."""

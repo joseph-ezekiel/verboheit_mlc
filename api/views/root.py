@@ -9,7 +9,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-# from rest_framework_api_key.permissions import HasAPIKey
 
 
 @cache_page(60 * 15)
@@ -44,14 +43,15 @@ def api_root(request, format=None):
             "authentication": {
                 "login": safe_reverse("v1:api-login"),
                 "logout": safe_reverse("v1:api-logout"),
-                "register": {
-                    "candidate": safe_reverse("v1:api-register-candidate"),
-                    "staff": safe_reverse("v1:api-register-staff"),
-                },
                 "token": {
                     "obtain": safe_reverse("v1:token-obtain-pair"),
                     "refresh": safe_reverse("v1:token-refresh"),
                 },
+            },
+            "registration": {
+                "toggle": safe_reverse("v1:api-toggle-registration"),
+                "candidate": safe_reverse("v1:api-register-candidate"),
+                "staff": safe_reverse("v1:api-register-staff"),
             },
             "candidates": {
                 "collection": safe_reverse("v1:api-candidate-list"),
@@ -122,9 +122,9 @@ def api_root(request, format=None):
                 ),
             },
             "leaderboard": {
-                "publish-leaderboard": safe_reverse("v1:api-publish-leaderboard"),
-                "load-leaderboard": safe_reverse("v1:api-load-leaderboard"),
+                "toggle": safe_reverse("v1:api-toggle-leaderboard"),
+                "publish": safe_reverse("v1:api-publish-leaderboard"),
+                "load": safe_reverse("v1:api-load-leaderboard"),
             },
         }
     )
-

@@ -15,6 +15,7 @@ All views are organized and grouped by functionality for clarity.
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+
 from .views import (
     answers,
     auth,
@@ -23,6 +24,7 @@ from .views import (
     exam,
     leaderboard,
     question,
+    registration,
     root,
     score,
     staff,
@@ -35,18 +37,24 @@ urlpatterns = [
     path("", root.api_root, name="api-root"),
     path("auth/login/", auth.login_api, name="api-login"),
     path("auth/logout/", auth.logout_api, name="api-logout"),
+    path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
+    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    # === REGISTRATION ===
     path(
-        "auth/register/candidate/",
-        auth.CandidateRegistrationView.as_view(),
+        "toggle-registration/",
+        registration.toggle_registration,
+        name="api-toggle-registration",
+    ),
+    path(
+        "register/candidate/",
+        registration.CandidateRegistrationView.as_view(),
         name="api-register-candidate",
     ),
     path(
-        "auth/register/staff/",
-        auth.StaffRegistrationView.as_view(),
+        "register/staff/",
+        registration.StaffRegistrationView.as_view(),
         name="api-register-staff",
     ),
-    path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
-    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     # === CANDIDATES ===
     path(
         "candidates/", candidate.CandidateListView.as_view(), name="api-candidate-list"
@@ -134,6 +142,11 @@ urlpatterns = [
         name="api-account-management-detail",
     ),
     # === LEADERBOARD ===
+    path(
+        "toggle-leaderboard/",
+        leaderboard.toggle_leaderboard,
+        name="api-toggle-leaderboard",
+    ),
     path(
         "leaderboard/publish/",
         leaderboard.publish_leaderboard,

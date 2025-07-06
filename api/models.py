@@ -365,3 +365,15 @@ class LeaderboardSnapshot(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+class SiteSetting(models.Model):
+    key = models.CharField(max_length=50, unique=True)
+    value = models.BooleanField(default=True)
+
+    @classmethod
+    def get_bool(cls, key, default=True):
+        try:
+            return cls.objects.get(key=key).value
+        except cls.DoesNotExist:
+            return default
+        

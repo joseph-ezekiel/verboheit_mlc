@@ -18,6 +18,7 @@ from .models import (
     CandidateScore,
     CandidateAnswer,
     LeaderboardSnapshot,
+    SiteSetting,
 )
 
 
@@ -134,6 +135,7 @@ class CandidateAnswerAdmin(admin.ModelAdmin):
 
     get_exam.short_description = "Exam"
 
+
 @admin.register(LeaderboardSnapshot)
 class LeaderboardSnapshotAdmin(admin.ModelAdmin):
     """
@@ -149,3 +151,10 @@ class LeaderboardSnapshotAdmin(admin.ModelAdmin):
     )
     list_filter = ("created_at",)
     search_fields = ("published_by__user__username",)
+    
+@admin.register(SiteSetting)
+class SiteSettingAdmin(admin.ModelAdmin):
+    list_display = (
+        "key",
+        "value",
+    )
