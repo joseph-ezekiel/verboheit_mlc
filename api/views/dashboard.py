@@ -180,7 +180,7 @@ class AccountManagementView(APIView):
             return request.user
 
         if not hasattr(request.user, "staff") or request.user.staff.role not in [
-            "admin",
+            # "admin",
             "owner",
         ]:
             return Response(

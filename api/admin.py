@@ -18,7 +18,7 @@ from .models import (
     CandidateScore,
     CandidateAnswer,
     LeaderboardSnapshot,
-    SiteSetting,
+    FeatureFlag,
 )
 
 
@@ -152,8 +152,8 @@ class LeaderboardSnapshotAdmin(admin.ModelAdmin):
     list_filter = ("created_at",)
     search_fields = ("published_by__user__username",)
     
-@admin.register(SiteSetting)
-class SiteSettingAdmin(admin.ModelAdmin):
+@admin.register(FeatureFlag)
+class FeatureFlagAdmin(admin.ModelAdmin):
     list_display = (
         "key",
         "value",

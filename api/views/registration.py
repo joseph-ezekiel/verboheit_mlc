@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework_api_key.permissions import HasAPIKey # type: ignore
 
 from ..permissions import StaffWithRole
-from ..models import SiteSetting
+from ..models import FeatureFlag
 from ..serializers import (
     CandidateRegistrationSerializer,
     StaffRegistrationSerializer,
@@ -31,7 +31,7 @@ class BaseRegistrationView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return Response({"error": "Already authenticated"}, status=400)
-        if not SiteSetting.get_bool("registration_open", default=True):
+        if not FeatureFlag.get_bool("registration_open", default=True):
             return Response(
                 {"detail": "Registration is currently closed."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -64,19 +64,48 @@ class StaffRegistrationView(BaseRegistrationView):
     
 @api_view(["POST"])
 @permission_classes([StaffWithRole(["admin", "owner"])])
-def toggle_registration(request):
+def toggle_candidate_registration(request):
     """
-    Toggle the registration status for candidates and staff.
+    Toggle the candidate registration status for candidates.
 
     Requires staff with 'admin' or 'owner' role.
     """
-    open_flag = request.data.get("open", True)
-    obj, created = SiteSetting.objects.get_or_create(
-        key="registration_open",
+    open_flag = request.data.get("open", False)
+    
+    obj, created = FeatureFlag.objects.get_or_create(
+        key="candidate_registration_open",
         defaults={"value": open_flag}
     )
+
+    if not created:
+        obj.value = open_flag
+        obj.save()
+    
     return Response(
-        {"message": f"registration_open: {obj.value}"}
+        {"message": f"candidate_registration_open: {obj.value}"}, status=status.HTTP_200_OK
     )
-        
+
+@api_view(["POST"])
+@permission_classes([StaffWithRole(["owner"])])
+def toggle_staff_registration(request):
+    """
+    Toggle the staff registration status for staff members.
+
+    Requires staff with 'owner' role.
+    """
+    open_flag = request.data.get("open", False)
+
+    obj, created = FeatureFlag.objects.get_or_create(
+        key="staff_registration_open",
+        defaults={"value": open_flag}
+    )
+
+    if not created:
+        obj.value = open_flag
+        obj.save()
+
+    return Response(
+        {"message": f"staff_registration_open: {obj.value}"}, status=status.HTTP_200_OK
+    )
+
     

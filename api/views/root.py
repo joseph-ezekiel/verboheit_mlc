@@ -49,7 +49,8 @@ def api_root(request, format=None):
                 },
             },
             "registration": {
-                "toggle": safe_reverse("v1:api-toggle-registration"),
+                "toggle_candidate": safe_reverse("v1:api-toggle-candidate-registration"),
+                "toggle_staff": safe_reverse("v1:api-toggle-staff-registration"),
                 "candidate": safe_reverse("v1:api-register-candidate"),
                 "staff": safe_reverse("v1:api-register-staff"),
             },

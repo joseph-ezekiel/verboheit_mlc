@@ -15,6 +15,7 @@ from rest_framework.reverse import reverse
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_api_key.permissions import HasAPIKey # type: ignore
 
 from ..serializers import (
     UserSerializer,
@@ -30,7 +31,7 @@ class LoginRateThrottle(AnonRateThrottle):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([HasAPIKey])
 @throttle_classes([LoginRateThrottle])
 def login_api(request):
     """Authenticate user and return tokens + user info"""

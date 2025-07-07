@@ -9,6 +9,8 @@ Includes models for:
 - Candidate scores with submission metadata
 """
 
+from typing import Optional
+
 from django.db import models
 from django.db.models import Sum, Avg, Count
 from django.contrib.auth.models import AbstractUser
@@ -85,7 +87,9 @@ class Candidate(models.Model):
     )
 
     objects = CandidateManager()
-
+    total_score: Optional[float]
+    average_score: Optional[float]
+    exams_taken: Optional[int]
     class Meta:
         indexes = [
             models.Index(fields=["role", "is_active"]),
@@ -132,7 +136,7 @@ class Candidate(models.Model):
         """
         Returns the most recent score submitted for this candidate.
         """
-        return self.candidatescore_set.latest("date_recorded")
+        return self.scores.latest("date_recorded")
 
     def get_score_dict(self):
         """
@@ -311,7 +315,7 @@ class Exam(models.Model):
         """
         Calculates the average score for all submissions tied to this exam.
         """
-        return self.candidatescore_set.aggregate(avg_score=Avg("score"))["avg_score"]
+        return self.scores.aggregate(avg_score=Avg("score"))["avg_score"]
 
 
 class CandidateScore(models.Model):
@@ -324,7 +328,7 @@ class CandidateScore(models.Model):
     candidate = models.ForeignKey(
         "Candidate", on_delete=models.CASCADE, related_name="scores"
     )
-    exam = models.ForeignKey("Exam", on_delete=models.CASCADE)
+    exam = models.ForeignKey("Exam", on_delete=models.CASCADE, related_name="scores")
     score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     date_recorded = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -347,12 +351,15 @@ class CandidateAnswer(models.Model):
         max_length=1,
         choices=Question.QUESTION_OPTIONS,
         blank=True,
-        default="",
+        null=True,
     )
-    answered_at = models.DateField(auto_now=True)
+    answered_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("candidate_score", "question")
+        constraints = [
+            models.UniqueConstraint(fields=['candidate_score', 'question'], name='unique_answer_per_candidate_score')
+        ]
+
 
 
 class LeaderboardSnapshot(models.Model):
@@ -366,7 +373,7 @@ class LeaderboardSnapshot(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-class SiteSetting(models.Model):
+class FeatureFlag(models.Model):
     key = models.CharField(max_length=50, unique=True)
     value = models.BooleanField(default=True)
 
