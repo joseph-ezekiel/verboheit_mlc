@@ -18,7 +18,7 @@ from ..models import Exam, CandidateScore, Candidate, Question
 from ..serializers import (
     ExamListSerializer,
     ExamDetailSerializer,
-    QuestionSerializer,
+    QuestionDetailSerializer,
     CandidateExamSerializer,
 )
 from ..permissions import StaffWithRole, IsCandidate, IsLeagueCandidate
@@ -90,7 +90,7 @@ class ExamQuestionsView(ListAPIView):
     """
 
     permission_classes = [IsAuthenticated, StaffWithRole(["admin", "owner"])]
-    serializer_class = QuestionSerializer
+    serializer_class = QuestionDetailSerializer
 
     def get_queryset(self):
         """

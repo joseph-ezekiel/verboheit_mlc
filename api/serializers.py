@@ -78,8 +78,9 @@ class CandidateListSerializer(serializers.ModelSerializer):
             "phone",
             "school",
             "role",
-            "is_verified",
-            "date_created",
+            # "profile_photo",
+            # "is_verified",
+            # "date_created",
         )
 
 
@@ -201,7 +202,14 @@ class StaffListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Staff
-        fields = ["user", "role", "occupation", "is_verified", "date_created"]
+        fields = (
+            "user",
+            "role",
+            # "profile_photo",
+            "occupation",
+            # "is_verified",
+            # "date_created"
+        )
 
 
 class StaffDetailSerializer(serializers.ModelSerializer):
@@ -226,8 +234,30 @@ class StaffDetailSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("date_created", "date_updated", "user")
 
+class QuestionListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for exam questions with created_by staff included.
+    """
 
-class QuestionSerializer(serializers.ModelSerializer):
+    # created_by = MinimalStaffSerializer(read_only=True)
+
+    class Meta:
+        model = Question
+        fields = (
+            "id",
+            "text",
+            # "option_a",
+            # "option_b",
+            # "option_c",
+            # "option_d",
+            # "correct_answer",
+            "difficulty",
+            "date_created",
+            # "created_by",
+        )
+        read_only_fields = ("id", "date_created", "created_by")
+
+class QuestionDetailSerializer(serializers.ModelSerializer):
     """
     Serializer for exam questions with created_by staff included.
     """
@@ -257,7 +287,7 @@ class ExamListSerializer(serializers.ModelSerializer):
     """
 
     question_count = serializers.SerializerMethodField()
-    created_by = MinimalStaffSerializer(read_only=True)
+    # created_by = MinimalStaffSerializer(read_only=True)
 
     class Meta:
         model = Exam
@@ -265,14 +295,14 @@ class ExamListSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "stage",
-            "description",
+            # "description",
             "exam_date",
-            "countdown_minutes",
-            "open_duration_hours",
-            "is_active",
-            "is_currently_open",
+            # "countdown_minutes",
+            # "open_duration_hours",
+            # "is_active",
+            # "is_currently_open",
             "question_count",
-            "created_by",
+            # "created_by",
             "date_created",
         )
 

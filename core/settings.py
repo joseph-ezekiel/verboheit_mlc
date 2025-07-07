@@ -121,10 +121,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/hour",
-        "login": "20/min",
+        "anon": "60/hour",        # Unauthenticated
+        "user": "1000/day",       # Authenticated users
+        "login": "5/min",         # Login endpoint
+        "burst": "20/min",        # For sensitive or POST-heavy endpoints
+        "sustained": "100/hour",  # For sustained traffic
     },
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
     "DEFAULT_VERSION": "v1",

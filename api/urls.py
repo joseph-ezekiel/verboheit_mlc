@@ -153,7 +153,7 @@ urlpatterns = [
         name="api-toggle-leaderboard",
     ),
     path(
-        "leaderboard/publish/",
+        "publish-leaderboard/",
         leaderboard.publish_leaderboard,
         name="api-publish-leaderboard",
     ),

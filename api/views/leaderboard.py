@@ -30,10 +30,11 @@ def publish_leaderboard(request):
 
     leaderboard = [
         {
+            "rank": index + 1,
             "candidate": MinimalCandidateSerializer(candidate).data,
             "total_score": candidate.total_score or 0,
         }
-        for candidate in league_candidates
+        for index, candidate in enumerate(league_candidates)
     ]
 
     snapshot = LeaderboardSnapshot.objects.create(
@@ -69,16 +70,16 @@ def toggle_leaderboard(request):
 
     Requires staff with 'admin' or 'owner' role.
     """
-    open_flag = request.data.get("open", False)
+    visible_flag = request.data.get("visible", False)
     obj, created = FeatureFlag.objects.get_or_create(
-        key="leaderboard_open",
-        defaults={"value": open_flag}
+        key="leaderboard_visible",
+        defaults={"value": visible_flag}
     )
     if not created:
-        obj.value = open_flag
+        obj.value = visible_flag
         obj.save()
     return Response(
-        {"message": f"leaderboard_open: {obj.value}"}
+        {"message": f"leaderboard_visible: {obj.value}"}
     )
         
     

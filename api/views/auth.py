@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_api_key.permissions import HasAPIKey # type: ignore
@@ -24,11 +24,21 @@ from ..serializers import (
 
 logger = logging.getLogger(__name__)
 
-class LoginRateThrottle(AnonRateThrottle):
-    """Throttle class for limiting anonymous login attempts."""
+class LoginRateThrottle(SimpleRateThrottle):
+    """Throttle for login attempts to prevent brute force attacks."""
 
     scope = "login"
 
+    def get_cache_key(self, request, view):
+        if request.user and request.user.is_authenticated:
+            return self.cache_format % {
+                "scope": self.scope,
+                "ident": request.user.pk
+            }
+        return self.cache_format % {
+            "scope": self.scope,
+            "ident": self.get_ident(request)
+        }
 
 @api_view(["POST"])
 @permission_classes([HasAPIKey])

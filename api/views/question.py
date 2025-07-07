@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 from ..models import Question
-from ..serializers import QuestionSerializer
+from ..serializers import QuestionListSerializer, QuestionDetailSerializer
 from ..permissions import StaffWithRole
 from ..utils.pagination_helpers import paginate_queryset
 from ..utils.query_filters import filter_questions
@@ -31,9 +31,9 @@ def question_list_api(request):
     if request.method == "GET":
         questions = Question.objects.all().order_by("-date_created")
         questions = filter_questions(questions, request.query_params)
-        return paginate_queryset(questions, request, QuestionSerializer)
+        return paginate_queryset(questions, request, QuestionListSerializer)
 
-    serializer = QuestionSerializer(data=request.data)
+    serializer = QuestionListSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -59,10 +59,10 @@ def question_detail_api(request, question_id):
     question = get_object_or_404(Question, id=question_id)
 
     if request.method == "GET":
-        return Response(QuestionSerializer(question).data)
+        return Response(QuestionDetailSerializer(question).data)
 
     if request.method in ["PUT", "PATCH"]:
-        serializer = QuestionSerializer(
+        serializer = QuestionDetailSerializer(
             question, data=request.data, partial=(request.method == "PATCH")
         )
         if serializer.is_valid():

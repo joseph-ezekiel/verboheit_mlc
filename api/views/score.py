@@ -29,7 +29,7 @@ def candidate_scores_api(request, candidate_id):
     Permissions:
         - Only staff with 'admin' or 'owner' roles can access.
     """
-    candidate = get_object_or_404(Candidate, id=candidate_id)
+    candidate = get_object_or_404(Candidate, pk=candidate_id)
     scores = CandidateScore.objects.filter(candidate=candidate)
     serializer = CandidateScoreSerializer(scores, many=True)
     return Response(serializer.data)

@@ -58,7 +58,7 @@ class StaffListView(ListAPIView):
         IsAuthenticated,
         StaffWithRole(["moderator", "admin", "owner"]),
     ]
-    serializer_class = StaffDetailSerializer
+    serializer_class = StaffListSerializer
     pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
 
     def get_queryset(self):
