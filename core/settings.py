@@ -125,7 +125,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/hour",        # Unauthenticated
+        "anon": "100/day",        # Unauthenticated
         "user": "1000/day",       # Authenticated users
         "login": "5/min",         # Login endpoint
         "burst": "20/min",        # For sensitive or POST-heavy endpoints

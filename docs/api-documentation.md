@@ -4,21 +4,22 @@ A comprehensive REST API for managing Verboheit Mathematics League Competition c
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Base URL](#base-url)
-- [Authentication](#authentication)
-- [User Roles & Permissions](#user-roles--permissions)
-- [API Endpoints](#api-endpoints)
-- [Query Parameters](#query-parameters)
-- [Error Handling](#error-handling)
-- [Rate Limiting](#rate-limiting)
-- [Versioning](#versioning)
-- [Interactive Documentation](#interactive-documentation)
-- [Support](#support)
-- [Changelog](#changelog)
+- [Overview](overview)
+- [Base URL](base-url)
+- [Authentication](authentication)
+- [User Roles & Permissions](user-roles--permissions)
+- [API Endpoints](api-endpoints)
+- [Query Parameters](query-parameters)
+- [Error Handling](error-handling)
+- [Rate Limiting](rate-limiting)
+- [Versioning](versioning)
+- [Interactive Documentation](interactive-documentation)
+- [Support](support)
+- [Changelog](changelog)
 
 ---
 
+(overview)=
 ## Overview
 
 The VMLC API provides an integrated backend service for the Verboheit Mathematics League Competition, handling registration, exam administration, scoring, and leaderboard functionality with role-based access control.
@@ -34,13 +35,14 @@ The VMLC API provides an integrated backend service for the Verboheit Mathematic
 ### API Characteristics
 
 - **Format**: JSON-only API
-- **Authentication**: JWT Bearer tokens with API key requirements
-- **Pagination**: Cursor-based pagination for large datasets
-- **Rate Limiting**: 100 requests per hour for authenticated users
+- **Authentication**: JWT Bearer tokens for most endpoints and API key for specific endpoints
+- **Pagination**: Page-based pagination
+- **Rate Limiting**: 1000 requests per day for authenticated users, 60 per day for anonymous users
 - **CORS**: Enabled for web applications
 
 ---
 
+(base-url)=
 ## Base URL
 
 ```
@@ -51,6 +53,7 @@ All endpoints are relative to this base URL.
 
 ---
 
+(authentication)=
 ## Authentication
 
 The API uses JWT (JSON Web Tokens) for authentication with two-tier security:
@@ -59,7 +62,7 @@ The API uses JWT (JSON Web Tokens) for authentication with two-tier security:
 
 Required for registration and login endpoints:
 
-```http
+```text
 Authorization: Api-Key <your_api_key>
 ```
 
@@ -67,7 +70,7 @@ Authorization: Api-Key <your_api_key>
 
 Required for all authenticated endpoints:
 
-```http
+```text
 Authorization: Bearer <access_token>
 ```
 
@@ -76,7 +79,7 @@ Authorization: Bearer <access_token>
 **Endpoint:** `POST /auth/login/`
 
 **Headers:**
-```http
+```text
 Authorization: Api-Key <your_api_key>
 Content-Type: application/json
 ```
@@ -136,7 +139,7 @@ Content-Type: application/json
 **Endpoint:** `POST /auth/logout/`
 
 **Headers:**
-```http
+```text
 Authorization: Bearer <access_token>
 ```
 
@@ -149,6 +152,7 @@ Authorization: Bearer <access_token>
 
 ---
 
+(user-roles--permissions)=
 ## User Roles & Permissions
 
 ### Candidate Roles
@@ -177,6 +181,7 @@ Authorization: Bearer <access_token>
 
 ---
 
+(api-endpoints)=
 ## API Endpoints
 
 ### Registration & System Controls
@@ -924,6 +929,7 @@ Control registration availability for new users.
 
 ---
 
+(query-parameters)=
 ## Query Parameters
 
 ### Common Parameters
@@ -960,6 +966,7 @@ Use ISO 8601 format for date parameters:
 
 ---
 
+(error-handling)=
 ## Error Handling
 
 ### HTTP Status Codes
@@ -1011,6 +1018,54 @@ Use ISO 8601 format for date parameters:
 
 ---
 
+(rate-limiting)=
+## Rate Limiting
+
+### Rate Limit Policy
+
+The API implements rate limiting to ensure fair usage and system stability:
+
+**Authenticated Users:**
+- 1000 requests per day
+- 60 requests per hour
+- 10 requests per minute
+
+**Anonymous Users:**
+- 60 requests per day
+- 5 requests per minute
+
+### Rate Limit Headers
+
+The API returns rate limit information in response headers:
+
+```text
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+```
+
+### Rate Limit Exceeded
+
+When rate limits are exceeded, the API returns:
+
+**Response:** `429 Too Many Requests`
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded. Please try again later.",
+    "details": {
+      "limit": 1000,
+      "remaining": 0,
+      "reset_time": "2024-01-21T00:00:00Z"
+    }
+  }
+}
+```
+
+---
+
+(versioning)=
 ## Versioning
 
 ### Current Version
@@ -1024,16 +1079,18 @@ The API is currently at version `v1`. All endpoints are prefixed with `/api/v1/`
 - **Deprecation**: 6-month notice period for deprecated endpoints
 - **Version Support**: Latest 2 major versions supported
 
+<!-- 
 ### Version Headers
 
 Include version in requests for explicit version control:
 
 ```http
 Accept: application/vnd.vmlc.v1+json
-```
+``` -->
 
 ---
 
+(interactive-documentation)=
 ## Interactive Documentation
 
 Explore the API interactively using our documentation interfaces:
@@ -1043,6 +1100,7 @@ Explore the API interactively using our documentation interfaces:
 
 ---
 
+(support)=
 ## Support
 
 For technical support, API key requests, or questions:
@@ -1051,7 +1109,7 @@ For technical support, API key requests, or questions:
 
 **Discord:** `@olujay`
 
-**Hive Blockchain:** `@olujay`
+<!-- **Hive Blockchain:** `@olujay` e.g. `peakd.com/@olujay` or `hive.blog/@olujay` -->
 
 **Response Time:** Within 48 hours for support requests
 
@@ -1059,6 +1117,7 @@ For technical support, API key requests, or questions:
 
 ---
 
+(changelog)=
 ## Changelog
 
 ### Version 1.0.0 (Current)
