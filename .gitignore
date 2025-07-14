@@ -174,4 +174,6 @@ cython_debug/
 # End of https://www.toptal.com/developers/gitignore/api/django
 
 auth.log
-api/tests/
+# api/tests/
+models_erd.dot
+models_erd.png
