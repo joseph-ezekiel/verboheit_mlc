@@ -6,7 +6,7 @@ The need for this project arose from the vision of scaling the VMLC into a natio
 
 ---
 
-## 🚀 Features
+## Features
 
 - **JWT Authentication**: Secure login and access token management
 - **Role-Based Access Control**:
@@ -49,7 +49,7 @@ verboheit_mlc/
 
 Visit the official API documentation for detailed usage instructions, endpoint listings, and role behavior guides:
 
-🔗 **[https://vlmc-api.readthedocs.io/latest/](https://vlmc-api.readthedocs.io/latest/)**
+Read the Docs: **[https://vlmc-api.readthedocs.io/latest/](https://vlmc-api.readthedocs.io/latest/)**
 
 ---
 
