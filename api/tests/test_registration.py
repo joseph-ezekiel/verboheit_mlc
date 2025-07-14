@@ -1,25 +1,17 @@
-import os
 import pytest
 import copy
 
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
-from dotenv import load_dotenv
-
-from core.settings import BASE_DIR
-
-load_dotenv(BASE_DIR / ".env")
-
-API_KEY = os.environ.get("API_KEY")
-
 User = get_user_model()
 
 
 @pytest.fixture
-def authenticated_api_client(api_client):
+def authenticated_api_client(api_client, settings):
     """API client with authentication credentials set"""
-    api_client.credentials(HTTP_AUTHORIZATION=f"Api-Key {API_KEY}")
+    test_api_key = "0pOS6SCd.XlirVyZ2Fq8wimnFjXG9SrWKo4o9Y67i"
+    api_client.credentials(HTTP_AUTHORIZATION=f"Api-Key {test_api_key}")
     return api_client
 
 
@@ -111,7 +103,14 @@ class TestCandidateRegistration:
         )
         assert response.status_code == 401
         assert "Authentication credentials were not provided." in response.data["error"]
-
+    
+    def test_invalid_api_key(self, api_client, candidate_registration_url, valid_candidate_data):
+        api_client.credentials(HTTP_AUTHORIZATION="Api-Key invalid-key")
+        response = api_client.post(
+            candidate_registration_url, valid_candidate_data(), format="json"
+        )
+        assert response.status_code == 401
+        assert "Invalid API key" in response.data["error"]
     def test_registration_invalid(self, authenticated_api_client, candidate_registration_url):
         data = {}
         response = authenticated_api_client.post(candidate_registration_url, data, format="json")

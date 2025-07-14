@@ -1,6 +1,6 @@
 # Verboheit Mathematics League Competition (VMLC) API Documentation
 
-A comprehensive REST API for managing VMLC candidates, staff, exams, and leaderboards.
+A comprehensive REST API for managing Verboheit Mathematics League Competition candidates, staff, exams, and leaderboards.
 
 ## Table of Contents
 
@@ -1049,9 +1049,13 @@ For technical support, API key requests, or questions:
 
 **Email:** `ezekieloluj@gmail.com`
 
+**Discord:** `@olujay`
+
+**Hive Blockchain:** `@olujay`
+
 **Response Time:** Within 48 hours for support requests
 
-**API Key Requests:** Kindly include your organization name and intended use case
+**API Key Requests:** Kindly include your organization name and intended use case.
 
 ---
 
