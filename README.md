@@ -1,6 +1,6 @@
 # Verboheit Mathematics League Competition API
 
-This is a proposed backend API for the **Verboheit Mathematics League Competition (VMLC)** — a Django-based platform that powers the registration, examination, scoring, and leaderboard systems for a multi-stage mathematics competition.
+This is a proposed backend API for the [**Verboheit Mathematics League Competition (VMLC)**](https://verboheit.org/). A Django-based platform that powers the registration, examination, scoring, and leaderboard systems for a multi-stage mathematics competition.
 
 The need for this project arose from the vision of scaling the VMLC into a nationwide event that demands a custom, robust platform for efficient operations, participant management, and permission-controlled workflows. This API is a foundational piece of that vision and can be integrated with any web or mobile frontend via the [API documentation](https://vlmc-api.readthedocs.io/latest/).
 
@@ -24,7 +24,7 @@ The need for this project arose from the vision of scaling the VMLC into a natio
 - **API Documentation**:
   - Auto-generated via Swagger/Redoc
   - Human-written docs hosted on Read the Docs
-- **Deployment**: Live and stable on [Render](https://verboheit-backend.onrender.com/)
+- **Deployment**: Live and stable on [Render](https://render.com/)
 - **Visual Schema**:
   - Entity Relationship Diagram (ERD) included in docs
 
@@ -36,7 +36,7 @@ The need for this project arose from the vision of scaling the VMLC into a natio
 verboheit_mlc/
 ├── api/                # DRF models, views, serializers, permissions, URL paths, and tests
 ├── core/               # Project settings and ASGI/WGI configuration
-├── docs/               # Sphinx documentation, ERD diagram
+├── docs/               # Sphinx documentation, database ERD
 ├── staticfiles/        # Collected static files for deployment
 ├── manage.py           # Django entry point
 ├── requirements.txt    # All project dependencies
@@ -49,7 +49,7 @@ verboheit_mlc/
 
 Visit the official API documentation for detailed usage instructions, endpoint listings, and role behavior guides:
 
-Read the Docs: **[https://vlmc-api.readthedocs.io/latest/](https://vlmc-api.readthedocs.io/latest/)**
+Read the Docs: **[vlmc-api.readthedocs.io](https://vlmc-api.readthedocs.io/)**
 
 ---
 
